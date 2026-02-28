@@ -12,9 +12,9 @@ module uart_rx(
     parameter BAUD_RATE = 9600;
 
     localparam integer CNT_INT  = CLK_FREQ / BAUD_RATE;  // 10416
-    localparam integer CNT_FRAC = CLK_FREQ % BAUD_RATE;  // 6400 (ÓàÊıÓÃÓÚÎ¢µ÷)
+    localparam integer CNT_FRAC = CLK_FREQ % BAUD_RATE;  // 6400 (ä½™æ•°ç”¨äºå¾®è°ƒ)
 
-    // Í¬²½ÊäÈë
+    // åŒæ­¥è¾“å…¥
     reg rx_d1, rx_d2;
     always @(posedge clk or negedge rst_n)
         if(!rst_n) {rx_d2, rx_d1} <= 2'b11;
@@ -22,9 +22,9 @@ module uart_rx(
     
     wire rx_sync = rx_d2;
 
-    // ×´Ì¬»ú
+    // çŠ¶æ€æœº
     reg state_idle, state_recv;
-    reg [3:0] bit_idx;      // 0:ÆğÊ¼Î»¼ì²é, 1-8:Êı¾İÎ», 9:½áÊø
+    reg [3:0] bit_idx;      // 0:èµ·å§‹ä½æ£€æŸ¥, 1-8:æ•°æ®ä½, 9:ç»“æŸ
     reg [15:0] cnt;
     reg [31:0] frac_acc;
     reg [7:0] data_buf;
@@ -43,7 +43,7 @@ module uart_rx(
             rx_valid <= 0;
 
             if(state_idle) begin
-                // ¼ì²âÏÂ½µÑØ (ÆğÊ¼Î»¿ªÊ¼)
+                // æ£€æµ‹ä¸‹é™æ²¿ (èµ·å§‹ä½å¼€å§‹)
                 if(!rx_sync && rx_d1) begin 
                     state_idle <= 0;
                     state_recv <= 1;
@@ -53,11 +53,11 @@ module uart_rx(
                     data_buf <= 0;
                 end
             end else if(state_recv) begin
-                // ´¦Àí·ÖÊıÀÛ¼Ó (²¨ÌØÂÊ·¢ÉúÆ÷Î¢µ÷)
+                // å¤„ç†åˆ†æ•°ç´¯åŠ  (æ³¢ç‰¹ç‡å‘ç”Ÿå™¨å¾®è°ƒ)
                 if(cnt == CNT_INT) begin
                     cnt <= 0;
                     if(frac_acc + CNT_FRAC >= BAUD_RATE) begin
-                        cnt <= 1; // ½èÎ»£¬¶à¼ÆÒ»¸öÖÜÆÚ
+                        cnt <= 1; // å€Ÿä½ï¼Œå¤šè®¡ä¸€ä¸ªå‘¨æœŸ
                         frac_acc <= frac_acc + CNT_FRAC - BAUD_RATE;
                     end else begin
                         frac_acc <= frac_acc + CNT_FRAC;
@@ -66,29 +66,29 @@ module uart_rx(
                     cnt <= cnt + 1;
                 end
 
-                // ²ÉÑùÂß¼­
-                // Ä¿±ê²ÉÑùµã£º1.5T (D0), 2.5T (D1), ..., 8.5T (D7)
-                // bit_idx=0: 0T -> 1T (ÆğÊ¼Î»Ê±¶Î)
-                // bit_idx=1: 1T -> 2T (D0 Ê±¶Î£¬Ó¦ÔÚ 1.5T ²ÉÑù)
+                // é‡‡æ ·é€»è¾‘
+                // ç›®æ ‡é‡‡æ ·ç‚¹ï¼š1.5T (D0), 2.5T (D1), ..., 8.5T (D7)
+                // bit_idx=0: 0T -> 1T (èµ·å§‹ä½æ—¶æ®µ)
+                // bit_idx=1: 1T -> 2T (D0 æ—¶æ®µï¼Œåº”åœ¨ 1.5T é‡‡æ ·)
                 
                 if(cnt == (CNT_INT >> 1)) begin 
-                    // Ã¿¸öÎ»ÖÜÆÚµÄÖĞ¼äµã (0.5T, 1.5T, 2.5T...)
+                    // æ¯ä¸ªä½å‘¨æœŸçš„ä¸­é—´ç‚¹ (0.5T, 1.5T, 2.5T...)
                     
                     if(bit_idx == 0) begin
-                        // 0.5T Ê±¿Ì£ºÑéÖ¤ÆğÊ¼Î»ÊÇ·ñÎª 0
+                        // 0.5T æ—¶åˆ»ï¼šéªŒè¯èµ·å§‹ä½æ˜¯å¦ä¸º 0
                         if(rx_sync !== 1'b0) begin
-                            state_idle <= 1; // ´íÎóÖ¡£¬¸´Î»
+                            state_idle <= 1; // é”™è¯¯å¸§ï¼Œå¤ä½
                             state_recv <= 0;
                         end
-                        // ¼ÌĞø¼ÆÊı£¬µÈ´ı½øÈëÊı¾İÎ»
+                        // ç»§ç»­è®¡æ•°ï¼Œç­‰å¾…è¿›å…¥æ•°æ®ä½
                     end 
                     else if(bit_idx >= 1 && bit_idx <= 8) begin
-                        // 1.5T ~ 8.5T Ê±¿Ì£º²ÉÑùÊı¾İÎ» D0 ~ D7
+                        // 1.5T ~ 8.5T æ—¶åˆ»ï¼šé‡‡æ ·æ•°æ®ä½ D0 ~ D7
                         data_buf[bit_idx - 1] <= rx_sync; 
                         bit_idx <= bit_idx + 1;
                     end 
                     else if(bit_idx == 9) begin
-                        // 9.5T Ê±¿Ì£ºÍ£Ö¹Î» (¿ÉÑ¡ÑéÖ¤)£¬Ö±½Ó½áÊø
+                        // 9.5T æ—¶åˆ»ï¼šåœæ­¢ä½ (å¯é€‰éªŒè¯)ï¼Œç›´æ¥ç»“æŸ
                         rx_data <= data_buf;
                         rx_valid <= 1;
                         state_idle <= 1;
@@ -96,10 +96,10 @@ module uart_rx(
                     end
                 end
                 
-                // ×´Ì¬ÍÆ½ø£ºµ±¼ÆÊıÆ÷×ßÍêÒ»¸öÍêÕûÖÜÆÚ (¿¼ÂÇ½èÎ»ºó)
+                // çŠ¶æ€æ¨è¿›ï¼šå½“è®¡æ•°å™¨èµ°å®Œä¸€ä¸ªå®Œæ•´å‘¨æœŸ (è€ƒè™‘å€Ÿä½å)
                 if(cnt == CNT_INT || cnt == CNT_INT + 1) begin
-                     if(bit_idx == 0) bit_idx <= 1; // ÆğÊ¼Î»¼ì²éÍê±Ï£¬×¼±¸½øÊı¾İÎ»
-                     // ÆäËûÇé¿öÔÚÉÏÃæµÄ°ëÖÜÆÚµãÒÑ¾­ÍÆ½øÁË bit_idx
+                     if(bit_idx == 0) bit_idx <= 1; // èµ·å§‹ä½æ£€æŸ¥å®Œæ¯•ï¼Œå‡†å¤‡è¿›æ•°æ®ä½
+                     // å…¶ä»–æƒ…å†µåœ¨ä¸Šé¢çš„åŠå‘¨æœŸç‚¹å·²ç»æ¨è¿›äº† bit_idx
                 end
             end
         end

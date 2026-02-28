@@ -40,7 +40,7 @@ module top_rrns_uart(
         .tx_busy(tx_busy)
     );
 
-    // ¿ØÖÆÂß¼­£º½ÓÊÕ»ØÏÔ + LED
+    // æ§åˆ¶é€»è¾‘ï¼šæ¥æ”¶å›æ˜¾ + LED
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             tx_start <= 0;
@@ -48,11 +48,11 @@ module top_rrns_uart(
             data_received_flag <= 0;
             led_timer <= 0;
         end else begin
-            tx_start <= rx_valid; // µ¥ÖÜÆÚÂö³å
+            tx_start <= rx_valid; // å•å‘¨æœŸè„‰å†²
             if(rx_valid) begin
                 tx_data <= rx_data;
                 data_received_flag <= 1;
-                led_timer <= 50_000_000; // LED ÁÁ 0.5 Ãë
+                led_timer <= 50_000_000; // LED äº® 0.5 ç§’
             end
 
             if(led_timer > 0) led_timer <= led_timer - 1;
@@ -60,7 +60,7 @@ module top_rrns_uart(
         end
     end
 
-    // ĞÄÌø LED
+    // å¿ƒè·³ LED
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             div_cnt <= 0; slow_clk <= 0;
@@ -72,7 +72,7 @@ module top_rrns_uart(
         end
     end
 
-    // LED Êä³ö
+    // LED è¾“å‡º
     assign led[0] = slow_clk;
     assign led[1] = rx_valid;
     assign led[2] = 0;

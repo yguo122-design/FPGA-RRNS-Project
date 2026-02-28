@@ -32,17 +32,17 @@ module uart_tx(
                     data_buf <= tx_data;
                     bit_idx <= 0;
                     cnt <= 0;
-                    uart_tx_pin <= 0; // ��ʼλ
+                    uart_tx_pin <= 0; // 起始位
                     tx_busy <= 1;
                 end
             end else if(state_send) begin
                 if(cnt == CNT_MAX) begin
                     cnt <= 0;
                     if(bit_idx < 8) begin
-                        uart_tx_pin <= data_buf[bit_idx]; // ��λ�ȷ�
+                        uart_tx_pin <= data_buf[bit_idx]; // 低位先发
                         bit_idx <= bit_idx + 1;
                     end else begin
-                        uart_tx_pin <= 1'b1; // ֹͣλ
+                        uart_tx_pin <= 1'b1; // 停止位
                         state_idle <= 1; state_send <= 0;
                     end
                 end else begin
