@@ -1,64 +1,6 @@
-`timescale 1ns / 1ps
+// --- Auto-generated Channel Instantiations (FLAT BUS VERSION) ---
+// Connects to chan_x_bus and chan_dist_bus using bit-slicing
 
-// =============================================================================
-// Module: decoder_3nrm_mld
-// Description: 3NRM-RRNS Parallel MLD Decoder (9 Moduli, 84 Channels)
-// Architecture: Parameterized Sub-module Instantiation (Optimized for Synthesis)
-// =============================================================================
-
-module decoder_3nrm_mld (
-    input wire clk,
-    input wire rst_n,          // Active-low reset
-    input wire start,          // Input valid (High)
-    
-    // 9 Residue Inputs (Concatenated)
-    // [62:57]r0(6b), [55:50]r1(6b), [48:42]r2(7b), 
-    // [41:37]r3(5b), [36:32]r4(5b), [31:27]r5(5b), [26:22]r6(5b), [21:17]r7(5b), [16:13]r8(4b)
-    input wire [62:0] residues_in, 
-    
-    output reg [19:0] data_out,
-    output reg valid,
-    output reg uncorrectable
-);
-
-
-
-// -----------------------------------------------------------------------------
-// 2. Residue Signal Unpacking & Normalization
-// -----------------------------------------------------------------------------
-wire [5:0] r0_raw = residues_in[62:57]; 
-wire [5:0] r1_raw = residues_in[55:50]; 
-wire [6:0] r2_raw = residues_in[48:42]; 
-wire [4:0] r3_raw = residues_in[41:37]; 
-wire [4:0] r4_raw = residues_in[36:32]; 
-wire [4:0] r5_raw = residues_in[31:27]; 
-wire [4:0] r6_raw = residues_in[26:22]; 
-wire [4:0] r7_raw = residues_in[21:17]; 
-wire [3:0] r8_raw = residues_in[16:13]; 
-
-// Normalize all residues to 7-bit for uniform processing in sub-modules
-wire [6:0] r0 = {1'd0, r0_raw}; // 6->7
-wire [6:0] r1 = {1'd0, r1_raw}; // 6->7
-wire [6:0] r2 = r2_raw;         // 7->7
-wire [6:0] r3 = {2'd0, r3_raw}; // 5->7
-wire [6:0] r4 = {2'd0, r4_raw}; // 5->7
-wire [6:0] r5 = {2'd0, r5_raw}; // 5->7
-wire [6:0] r6 = {2'd0, r6_raw}; // 5->7
-wire [6:0] r7 = {2'd0, r7_raw}; // 5->7
-wire [6:0] r8 = {3'd0, r8_raw}; // 4->7
-
-// --- 3: Signal Declarations (84 Independent Wires) ---
-wire [19:0] chan_x_0, chan_x_1, chan_x_2, chan_x_3, chan_x_4, chan_x_5, chan_x_6, chan_x_7, chan_x_8, chan_x_9, chan_x_10, chan_x_11, chan_x_12, chan_x_13, chan_x_14, chan_x_15, chan_x_16, chan_x_17, chan_x_18, chan_x_19, chan_x_20, chan_x_21, chan_x_22, chan_x_23, chan_x_24, chan_x_25, chan_x_26, chan_x_27, chan_x_28, chan_x_29, chan_x_30, chan_x_31, chan_x_32, chan_x_33, chan_x_34, chan_x_35, chan_x_36, chan_x_37, chan_x_38, chan_x_39, chan_x_40, chan_x_41, chan_x_42, chan_x_43, chan_x_44, chan_x_45, chan_x_46, chan_x_47, chan_x_48, chan_x_49, chan_x_50, chan_x_51, chan_x_52, chan_x_53, chan_x_54, chan_x_55, chan_x_56, chan_x_57, chan_x_58, chan_x_59, chan_x_60, chan_x_61, chan_x_62, chan_x_63, chan_x_64, chan_x_65, chan_x_66, chan_x_67, chan_x_68, chan_x_69, chan_x_70, chan_x_71, chan_x_72, chan_x_73, chan_x_74, chan_x_75, chan_x_76, chan_x_77, chan_x_78, chan_x_79, chan_x_80, chan_x_81, chan_x_82, chan_x_83;
-wire [15:0] chan_dist_0, chan_dist_1, chan_dist_2, chan_dist_3, chan_dist_4, chan_dist_5, chan_dist_6, chan_dist_7, chan_dist_8, chan_dist_9, chan_dist_10, chan_dist_11, chan_dist_12, chan_dist_13, chan_dist_14, chan_dist_15, chan_dist_16, chan_dist_17, chan_dist_18, chan_dist_19, chan_dist_20, chan_dist_21, chan_dist_22, chan_dist_23, chan_dist_24, chan_dist_25, chan_dist_26, chan_dist_27, chan_dist_28, chan_dist_29, chan_dist_30, chan_dist_31, chan_dist_32, chan_dist_33, chan_dist_34, chan_dist_35, chan_dist_36, chan_dist_37, chan_dist_38, chan_dist_39, chan_dist_40, chan_dist_41, chan_dist_42, chan_dist_43, chan_dist_44, chan_dist_45, chan_dist_46, chan_dist_47, chan_dist_48, chan_dist_49, chan_dist_50, chan_dist_51, chan_dist_52, chan_dist_53, chan_dist_54, chan_dist_55, chan_dist_56, chan_dist_57, chan_dist_58, chan_dist_59, chan_dist_60, chan_dist_61, chan_dist_62, chan_dist_63, chan_dist_64, chan_dist_65, chan_dist_66, chan_dist_67, chan_dist_68, chan_dist_69, chan_dist_70, chan_dist_71, chan_dist_72, chan_dist_73, chan_dist_74, chan_dist_75, chan_dist_76, chan_dist_77, chan_dist_78, chan_dist_79, chan_dist_80, chan_dist_81, chan_dist_82, chan_dist_83;
-
-
-// -----------------------------------------------------------------------------
-// 4. Generate 84 Parallel Channels (Parameterized Instantiation)
-// -----------------------------------------------------------------------------
-genvar ch_idx;
-generate
-
-// --- Part 2: Module Instantiations ---
         channel_unit #(
             .P_MI0(20'd4095), .P_MI1(20'd4160), .P_MI2(20'd4032),
             .P_INV0(20'd63), .P_INV1(20'd32), .P_INV2(20'd33),
@@ -66,8 +8,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd2)
         ) u_channel_0 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_0),
-            .dist_out(chan_dist_0)
+            .x_out(chan_x_bus[0 +: 20]),
+            .dist_out(chan_dist_bus[0 +: 16])
         );
 
         channel_unit #(
@@ -77,8 +19,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd3)
         ) u_channel_1 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_1),
-            .dist_out(chan_dist_1)
+            .x_out(chan_x_bus[20 +: 20]),
+            .dist_out(chan_dist_bus[16 +: 16])
         );
 
         channel_unit #(
@@ -88,8 +30,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd4)
         ) u_channel_2 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_2),
-            .dist_out(chan_dist_2)
+            .x_out(chan_x_bus[40 +: 20]),
+            .dist_out(chan_dist_bus[32 +: 16])
         );
 
         channel_unit #(
@@ -99,8 +41,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd5)
         ) u_channel_3 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_3),
-            .dist_out(chan_dist_3)
+            .x_out(chan_x_bus[60 +: 20]),
+            .dist_out(chan_dist_bus[48 +: 16])
         );
 
         channel_unit #(
@@ -110,8 +52,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd6)
         ) u_channel_4 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_4),
-            .dist_out(chan_dist_4)
+            .x_out(chan_x_bus[80 +: 20]),
+            .dist_out(chan_dist_bus[64 +: 16])
         );
 
         channel_unit #(
@@ -121,8 +63,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd7)
         ) u_channel_5 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_5),
-            .dist_out(chan_dist_5)
+            .x_out(chan_x_bus[100 +: 20]),
+            .dist_out(chan_dist_bus[80 +: 16])
         );
 
         channel_unit #(
@@ -132,8 +74,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd8)
         ) u_channel_6 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_6),
-            .dist_out(chan_dist_6)
+            .x_out(chan_x_bus[120 +: 20]),
+            .dist_out(chan_dist_bus[96 +: 16])
         );
 
         channel_unit #(
@@ -143,8 +85,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd3)
         ) u_channel_7 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_7),
-            .dist_out(chan_dist_7)
+            .x_out(chan_x_bus[140 +: 20]),
+            .dist_out(chan_dist_bus[112 +: 16])
         );
 
         channel_unit #(
@@ -154,8 +96,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd4)
         ) u_channel_8 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_8),
-            .dist_out(chan_dist_8)
+            .x_out(chan_x_bus[160 +: 20]),
+            .dist_out(chan_dist_bus[128 +: 16])
         );
 
         channel_unit #(
@@ -165,8 +107,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd5)
         ) u_channel_9 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_9),
-            .dist_out(chan_dist_9)
+            .x_out(chan_x_bus[180 +: 20]),
+            .dist_out(chan_dist_bus[144 +: 16])
         );
 
         channel_unit #(
@@ -176,8 +118,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd6)
         ) u_channel_10 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_10),
-            .dist_out(chan_dist_10)
+            .x_out(chan_x_bus[200 +: 20]),
+            .dist_out(chan_dist_bus[160 +: 16])
         );
 
         channel_unit #(
@@ -187,8 +129,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd7)
         ) u_channel_11 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_11),
-            .dist_out(chan_dist_11)
+            .x_out(chan_x_bus[220 +: 20]),
+            .dist_out(chan_dist_bus[176 +: 16])
         );
 
         channel_unit #(
@@ -198,8 +140,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd8)
         ) u_channel_12 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_12),
-            .dist_out(chan_dist_12)
+            .x_out(chan_x_bus[240 +: 20]),
+            .dist_out(chan_dist_bus[192 +: 16])
         );
 
         channel_unit #(
@@ -209,8 +151,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd4)
         ) u_channel_13 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_13),
-            .dist_out(chan_dist_13)
+            .x_out(chan_x_bus[260 +: 20]),
+            .dist_out(chan_dist_bus[208 +: 16])
         );
 
         channel_unit #(
@@ -220,8 +162,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd5)
         ) u_channel_14 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_14),
-            .dist_out(chan_dist_14)
+            .x_out(chan_x_bus[280 +: 20]),
+            .dist_out(chan_dist_bus[224 +: 16])
         );
 
         channel_unit #(
@@ -231,8 +173,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd6)
         ) u_channel_15 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_15),
-            .dist_out(chan_dist_15)
+            .x_out(chan_x_bus[300 +: 20]),
+            .dist_out(chan_dist_bus[240 +: 16])
         );
 
         channel_unit #(
@@ -242,8 +184,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd7)
         ) u_channel_16 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_16),
-            .dist_out(chan_dist_16)
+            .x_out(chan_x_bus[320 +: 20]),
+            .dist_out(chan_dist_bus[256 +: 16])
         );
 
         channel_unit #(
@@ -253,8 +195,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd8)
         ) u_channel_17 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_17),
-            .dist_out(chan_dist_17)
+            .x_out(chan_x_bus[340 +: 20]),
+            .dist_out(chan_dist_bus[272 +: 16])
         );
 
         channel_unit #(
@@ -264,8 +206,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd4), .P_IDX3(4'd5)
         ) u_channel_18 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_18),
-            .dist_out(chan_dist_18)
+            .x_out(chan_x_bus[360 +: 20]),
+            .dist_out(chan_dist_bus[288 +: 16])
         );
 
         channel_unit #(
@@ -275,8 +217,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd4), .P_IDX3(4'd6)
         ) u_channel_19 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_19),
-            .dist_out(chan_dist_19)
+            .x_out(chan_x_bus[380 +: 20]),
+            .dist_out(chan_dist_bus[304 +: 16])
         );
 
         channel_unit #(
@@ -286,8 +228,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd4), .P_IDX3(4'd7)
         ) u_channel_20 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_20),
-            .dist_out(chan_dist_20)
+            .x_out(chan_x_bus[400 +: 20]),
+            .dist_out(chan_dist_bus[320 +: 16])
         );
 
         channel_unit #(
@@ -297,8 +239,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd4), .P_IDX3(4'd8)
         ) u_channel_21 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_21),
-            .dist_out(chan_dist_21)
+            .x_out(chan_x_bus[420 +: 20]),
+            .dist_out(chan_dist_bus[336 +: 16])
         );
 
         channel_unit #(
@@ -308,8 +250,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd5), .P_IDX3(4'd6)
         ) u_channel_22 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_22),
-            .dist_out(chan_dist_22)
+            .x_out(chan_x_bus[440 +: 20]),
+            .dist_out(chan_dist_bus[352 +: 16])
         );
 
         channel_unit #(
@@ -319,8 +261,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd5), .P_IDX3(4'd7)
         ) u_channel_23 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_23),
-            .dist_out(chan_dist_23)
+            .x_out(chan_x_bus[460 +: 20]),
+            .dist_out(chan_dist_bus[368 +: 16])
         );
 
         channel_unit #(
@@ -330,8 +272,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd5), .P_IDX3(4'd8)
         ) u_channel_24 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_24),
-            .dist_out(chan_dist_24)
+            .x_out(chan_x_bus[480 +: 20]),
+            .dist_out(chan_dist_bus[384 +: 16])
         );
 
         channel_unit #(
@@ -341,8 +283,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd6), .P_IDX3(4'd7)
         ) u_channel_25 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_25),
-            .dist_out(chan_dist_25)
+            .x_out(chan_x_bus[500 +: 20]),
+            .dist_out(chan_dist_bus[400 +: 16])
         );
 
         channel_unit #(
@@ -352,8 +294,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd6), .P_IDX3(4'd8)
         ) u_channel_26 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_26),
-            .dist_out(chan_dist_26)
+            .x_out(chan_x_bus[520 +: 20]),
+            .dist_out(chan_dist_bus[416 +: 16])
         );
 
         channel_unit #(
@@ -363,8 +305,8 @@ generate
             .P_IDX1(4'd0), .P_IDX2(4'd7), .P_IDX3(4'd8)
         ) u_channel_27 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_27),
-            .dist_out(chan_dist_27)
+            .x_out(chan_x_bus[540 +: 20]),
+            .dist_out(chan_dist_bus[432 +: 16])
         );
 
         channel_unit #(
@@ -374,8 +316,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd3)
         ) u_channel_28 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_28),
-            .dist_out(chan_dist_28)
+            .x_out(chan_x_bus[560 +: 20]),
+            .dist_out(chan_dist_bus[448 +: 16])
         );
 
         channel_unit #(
@@ -385,8 +327,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd4)
         ) u_channel_29 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_29),
-            .dist_out(chan_dist_29)
+            .x_out(chan_x_bus[580 +: 20]),
+            .dist_out(chan_dist_bus[464 +: 16])
         );
 
         channel_unit #(
@@ -396,8 +338,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd5)
         ) u_channel_30 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_30),
-            .dist_out(chan_dist_30)
+            .x_out(chan_x_bus[600 +: 20]),
+            .dist_out(chan_dist_bus[480 +: 16])
         );
 
         channel_unit #(
@@ -407,8 +349,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd6)
         ) u_channel_31 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_31),
-            .dist_out(chan_dist_31)
+            .x_out(chan_x_bus[620 +: 20]),
+            .dist_out(chan_dist_bus[496 +: 16])
         );
 
         channel_unit #(
@@ -418,8 +360,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd7)
         ) u_channel_32 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_32),
-            .dist_out(chan_dist_32)
+            .x_out(chan_x_bus[640 +: 20]),
+            .dist_out(chan_dist_bus[512 +: 16])
         );
 
         channel_unit #(
@@ -429,8 +371,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd8)
         ) u_channel_33 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_33),
-            .dist_out(chan_dist_33)
+            .x_out(chan_x_bus[660 +: 20]),
+            .dist_out(chan_dist_bus[528 +: 16])
         );
 
         channel_unit #(
@@ -440,8 +382,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd4)
         ) u_channel_34 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_34),
-            .dist_out(chan_dist_34)
+            .x_out(chan_x_bus[680 +: 20]),
+            .dist_out(chan_dist_bus[544 +: 16])
         );
 
         channel_unit #(
@@ -451,8 +393,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd5)
         ) u_channel_35 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_35),
-            .dist_out(chan_dist_35)
+            .x_out(chan_x_bus[700 +: 20]),
+            .dist_out(chan_dist_bus[560 +: 16])
         );
 
         channel_unit #(
@@ -462,8 +404,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd6)
         ) u_channel_36 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_36),
-            .dist_out(chan_dist_36)
+            .x_out(chan_x_bus[720 +: 20]),
+            .dist_out(chan_dist_bus[576 +: 16])
         );
 
         channel_unit #(
@@ -473,8 +415,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd7)
         ) u_channel_37 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_37),
-            .dist_out(chan_dist_37)
+            .x_out(chan_x_bus[740 +: 20]),
+            .dist_out(chan_dist_bus[592 +: 16])
         );
 
         channel_unit #(
@@ -484,8 +426,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd8)
         ) u_channel_38 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_38),
-            .dist_out(chan_dist_38)
+            .x_out(chan_x_bus[760 +: 20]),
+            .dist_out(chan_dist_bus[608 +: 16])
         );
 
         channel_unit #(
@@ -495,8 +437,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd4), .P_IDX3(4'd5)
         ) u_channel_39 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_39),
-            .dist_out(chan_dist_39)
+            .x_out(chan_x_bus[780 +: 20]),
+            .dist_out(chan_dist_bus[624 +: 16])
         );
 
         channel_unit #(
@@ -506,8 +448,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd4), .P_IDX3(4'd6)
         ) u_channel_40 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_40),
-            .dist_out(chan_dist_40)
+            .x_out(chan_x_bus[800 +: 20]),
+            .dist_out(chan_dist_bus[640 +: 16])
         );
 
         channel_unit #(
@@ -517,8 +459,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd4), .P_IDX3(4'd7)
         ) u_channel_41 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_41),
-            .dist_out(chan_dist_41)
+            .x_out(chan_x_bus[820 +: 20]),
+            .dist_out(chan_dist_bus[656 +: 16])
         );
 
         channel_unit #(
@@ -528,8 +470,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd4), .P_IDX3(4'd8)
         ) u_channel_42 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_42),
-            .dist_out(chan_dist_42)
+            .x_out(chan_x_bus[840 +: 20]),
+            .dist_out(chan_dist_bus[672 +: 16])
         );
 
         channel_unit #(
@@ -539,8 +481,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd5), .P_IDX3(4'd6)
         ) u_channel_43 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_43),
-            .dist_out(chan_dist_43)
+            .x_out(chan_x_bus[860 +: 20]),
+            .dist_out(chan_dist_bus[688 +: 16])
         );
 
         channel_unit #(
@@ -550,8 +492,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd5), .P_IDX3(4'd7)
         ) u_channel_44 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_44),
-            .dist_out(chan_dist_44)
+            .x_out(chan_x_bus[880 +: 20]),
+            .dist_out(chan_dist_bus[704 +: 16])
         );
 
         channel_unit #(
@@ -561,8 +503,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd5), .P_IDX3(4'd8)
         ) u_channel_45 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_45),
-            .dist_out(chan_dist_45)
+            .x_out(chan_x_bus[900 +: 20]),
+            .dist_out(chan_dist_bus[720 +: 16])
         );
 
         channel_unit #(
@@ -572,8 +514,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd6), .P_IDX3(4'd7)
         ) u_channel_46 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_46),
-            .dist_out(chan_dist_46)
+            .x_out(chan_x_bus[920 +: 20]),
+            .dist_out(chan_dist_bus[736 +: 16])
         );
 
         channel_unit #(
@@ -583,8 +525,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd6), .P_IDX3(4'd8)
         ) u_channel_47 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_47),
-            .dist_out(chan_dist_47)
+            .x_out(chan_x_bus[940 +: 20]),
+            .dist_out(chan_dist_bus[752 +: 16])
         );
 
         channel_unit #(
@@ -594,8 +536,8 @@ generate
             .P_IDX1(4'd1), .P_IDX2(4'd7), .P_IDX3(4'd8)
         ) u_channel_48 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_48),
-            .dist_out(chan_dist_48)
+            .x_out(chan_x_bus[960 +: 20]),
+            .dist_out(chan_dist_bus[768 +: 16])
         );
 
         channel_unit #(
@@ -605,8 +547,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd4)
         ) u_channel_49 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_49),
-            .dist_out(chan_dist_49)
+            .x_out(chan_x_bus[980 +: 20]),
+            .dist_out(chan_dist_bus[784 +: 16])
         );
 
         channel_unit #(
@@ -616,8 +558,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd5)
         ) u_channel_50 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_50),
-            .dist_out(chan_dist_50)
+            .x_out(chan_x_bus[1000 +: 20]),
+            .dist_out(chan_dist_bus[800 +: 16])
         );
 
         channel_unit #(
@@ -627,8 +569,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd6)
         ) u_channel_51 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_51),
-            .dist_out(chan_dist_51)
+            .x_out(chan_x_bus[1020 +: 20]),
+            .dist_out(chan_dist_bus[816 +: 16])
         );
 
         channel_unit #(
@@ -638,8 +580,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd7)
         ) u_channel_52 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_52),
-            .dist_out(chan_dist_52)
+            .x_out(chan_x_bus[1040 +: 20]),
+            .dist_out(chan_dist_bus[832 +: 16])
         );
 
         channel_unit #(
@@ -649,8 +591,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd8)
         ) u_channel_53 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_53),
-            .dist_out(chan_dist_53)
+            .x_out(chan_x_bus[1060 +: 20]),
+            .dist_out(chan_dist_bus[848 +: 16])
         );
 
         channel_unit #(
@@ -660,8 +602,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd4), .P_IDX3(4'd5)
         ) u_channel_54 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_54),
-            .dist_out(chan_dist_54)
+            .x_out(chan_x_bus[1080 +: 20]),
+            .dist_out(chan_dist_bus[864 +: 16])
         );
 
         channel_unit #(
@@ -671,8 +613,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd4), .P_IDX3(4'd6)
         ) u_channel_55 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_55),
-            .dist_out(chan_dist_55)
+            .x_out(chan_x_bus[1100 +: 20]),
+            .dist_out(chan_dist_bus[880 +: 16])
         );
 
         channel_unit #(
@@ -682,8 +624,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd4), .P_IDX3(4'd7)
         ) u_channel_56 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_56),
-            .dist_out(chan_dist_56)
+            .x_out(chan_x_bus[1120 +: 20]),
+            .dist_out(chan_dist_bus[896 +: 16])
         );
 
         channel_unit #(
@@ -693,8 +635,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd4), .P_IDX3(4'd8)
         ) u_channel_57 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_57),
-            .dist_out(chan_dist_57)
+            .x_out(chan_x_bus[1140 +: 20]),
+            .dist_out(chan_dist_bus[912 +: 16])
         );
 
         channel_unit #(
@@ -704,8 +646,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd5), .P_IDX3(4'd6)
         ) u_channel_58 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_58),
-            .dist_out(chan_dist_58)
+            .x_out(chan_x_bus[1160 +: 20]),
+            .dist_out(chan_dist_bus[928 +: 16])
         );
 
         channel_unit #(
@@ -715,8 +657,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd5), .P_IDX3(4'd7)
         ) u_channel_59 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_59),
-            .dist_out(chan_dist_59)
+            .x_out(chan_x_bus[1180 +: 20]),
+            .dist_out(chan_dist_bus[944 +: 16])
         );
 
         channel_unit #(
@@ -726,8 +668,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd5), .P_IDX3(4'd8)
         ) u_channel_60 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_60),
-            .dist_out(chan_dist_60)
+            .x_out(chan_x_bus[1200 +: 20]),
+            .dist_out(chan_dist_bus[960 +: 16])
         );
 
         channel_unit #(
@@ -737,8 +679,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd6), .P_IDX3(4'd7)
         ) u_channel_61 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_61),
-            .dist_out(chan_dist_61)
+            .x_out(chan_x_bus[1220 +: 20]),
+            .dist_out(chan_dist_bus[976 +: 16])
         );
 
         channel_unit #(
@@ -748,8 +690,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd6), .P_IDX3(4'd8)
         ) u_channel_62 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_62),
-            .dist_out(chan_dist_62)
+            .x_out(chan_x_bus[1240 +: 20]),
+            .dist_out(chan_dist_bus[992 +: 16])
         );
 
         channel_unit #(
@@ -759,8 +701,8 @@ generate
             .P_IDX1(4'd2), .P_IDX2(4'd7), .P_IDX3(4'd8)
         ) u_channel_63 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_63),
-            .dist_out(chan_dist_63)
+            .x_out(chan_x_bus[1260 +: 20]),
+            .dist_out(chan_dist_bus[1008 +: 16])
         );
 
         channel_unit #(
@@ -770,8 +712,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd4), .P_IDX3(4'd5)
         ) u_channel_64 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_64),
-            .dist_out(chan_dist_64)
+            .x_out(chan_x_bus[1280 +: 20]),
+            .dist_out(chan_dist_bus[1024 +: 16])
         );
 
         channel_unit #(
@@ -781,8 +723,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd4), .P_IDX3(4'd6)
         ) u_channel_65 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_65),
-            .dist_out(chan_dist_65)
+            .x_out(chan_x_bus[1300 +: 20]),
+            .dist_out(chan_dist_bus[1040 +: 16])
         );
 
         channel_unit #(
@@ -792,8 +734,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd4), .P_IDX3(4'd7)
         ) u_channel_66 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_66),
-            .dist_out(chan_dist_66)
+            .x_out(chan_x_bus[1320 +: 20]),
+            .dist_out(chan_dist_bus[1056 +: 16])
         );
 
         channel_unit #(
@@ -803,8 +745,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd4), .P_IDX3(4'd8)
         ) u_channel_67 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_67),
-            .dist_out(chan_dist_67)
+            .x_out(chan_x_bus[1340 +: 20]),
+            .dist_out(chan_dist_bus[1072 +: 16])
         );
 
         channel_unit #(
@@ -814,8 +756,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd5), .P_IDX3(4'd6)
         ) u_channel_68 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_68),
-            .dist_out(chan_dist_68)
+            .x_out(chan_x_bus[1360 +: 20]),
+            .dist_out(chan_dist_bus[1088 +: 16])
         );
 
         channel_unit #(
@@ -825,8 +767,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd5), .P_IDX3(4'd7)
         ) u_channel_69 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_69),
-            .dist_out(chan_dist_69)
+            .x_out(chan_x_bus[1380 +: 20]),
+            .dist_out(chan_dist_bus[1104 +: 16])
         );
 
         channel_unit #(
@@ -836,8 +778,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd5), .P_IDX3(4'd8)
         ) u_channel_70 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_70),
-            .dist_out(chan_dist_70)
+            .x_out(chan_x_bus[1400 +: 20]),
+            .dist_out(chan_dist_bus[1120 +: 16])
         );
 
         channel_unit #(
@@ -847,8 +789,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd6), .P_IDX3(4'd7)
         ) u_channel_71 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_71),
-            .dist_out(chan_dist_71)
+            .x_out(chan_x_bus[1420 +: 20]),
+            .dist_out(chan_dist_bus[1136 +: 16])
         );
 
         channel_unit #(
@@ -858,8 +800,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd6), .P_IDX3(4'd8)
         ) u_channel_72 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_72),
-            .dist_out(chan_dist_72)
+            .x_out(chan_x_bus[1440 +: 20]),
+            .dist_out(chan_dist_bus[1152 +: 16])
         );
 
         channel_unit #(
@@ -869,8 +811,8 @@ generate
             .P_IDX1(4'd3), .P_IDX2(4'd7), .P_IDX3(4'd8)
         ) u_channel_73 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_73),
-            .dist_out(chan_dist_73)
+            .x_out(chan_x_bus[1460 +: 20]),
+            .dist_out(chan_dist_bus[1168 +: 16])
         );
 
         channel_unit #(
@@ -880,8 +822,8 @@ generate
             .P_IDX1(4'd4), .P_IDX2(4'd5), .P_IDX3(4'd6)
         ) u_channel_74 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_74),
-            .dist_out(chan_dist_74)
+            .x_out(chan_x_bus[1480 +: 20]),
+            .dist_out(chan_dist_bus[1184 +: 16])
         );
 
         channel_unit #(
@@ -891,8 +833,8 @@ generate
             .P_IDX1(4'd4), .P_IDX2(4'd5), .P_IDX3(4'd7)
         ) u_channel_75 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_75),
-            .dist_out(chan_dist_75)
+            .x_out(chan_x_bus[1500 +: 20]),
+            .dist_out(chan_dist_bus[1200 +: 16])
         );
 
         channel_unit #(
@@ -902,8 +844,8 @@ generate
             .P_IDX1(4'd4), .P_IDX2(4'd5), .P_IDX3(4'd8)
         ) u_channel_76 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_76),
-            .dist_out(chan_dist_76)
+            .x_out(chan_x_bus[1520 +: 20]),
+            .dist_out(chan_dist_bus[1216 +: 16])
         );
 
         channel_unit #(
@@ -913,8 +855,8 @@ generate
             .P_IDX1(4'd4), .P_IDX2(4'd6), .P_IDX3(4'd7)
         ) u_channel_77 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_77),
-            .dist_out(chan_dist_77)
+            .x_out(chan_x_bus[1540 +: 20]),
+            .dist_out(chan_dist_bus[1232 +: 16])
         );
 
         channel_unit #(
@@ -924,8 +866,8 @@ generate
             .P_IDX1(4'd4), .P_IDX2(4'd6), .P_IDX3(4'd8)
         ) u_channel_78 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_78),
-            .dist_out(chan_dist_78)
+            .x_out(chan_x_bus[1560 +: 20]),
+            .dist_out(chan_dist_bus[1248 +: 16])
         );
 
         channel_unit #(
@@ -935,8 +877,8 @@ generate
             .P_IDX1(4'd4), .P_IDX2(4'd7), .P_IDX3(4'd8)
         ) u_channel_79 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_79),
-            .dist_out(chan_dist_79)
+            .x_out(chan_x_bus[1580 +: 20]),
+            .dist_out(chan_dist_bus[1264 +: 16])
         );
 
         channel_unit #(
@@ -946,8 +888,8 @@ generate
             .P_IDX1(4'd5), .P_IDX2(4'd6), .P_IDX3(4'd7)
         ) u_channel_80 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_80),
-            .dist_out(chan_dist_80)
+            .x_out(chan_x_bus[1600 +: 20]),
+            .dist_out(chan_dist_bus[1280 +: 16])
         );
 
         channel_unit #(
@@ -957,8 +899,8 @@ generate
             .P_IDX1(4'd5), .P_IDX2(4'd6), .P_IDX3(4'd8)
         ) u_channel_81 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_81),
-            .dist_out(chan_dist_81)
+            .x_out(chan_x_bus[1620 +: 20]),
+            .dist_out(chan_dist_bus[1296 +: 16])
         );
 
         channel_unit #(
@@ -968,8 +910,8 @@ generate
             .P_IDX1(4'd5), .P_IDX2(4'd7), .P_IDX3(4'd8)
         ) u_channel_82 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_82),
-            .dist_out(chan_dist_82)
+            .x_out(chan_x_bus[1640 +: 20]),
+            .dist_out(chan_dist_bus[1312 +: 16])
         );
 
         channel_unit #(
@@ -979,566 +921,7 @@ generate
             .P_IDX1(4'd6), .P_IDX2(4'd7), .P_IDX3(4'd8)
         ) u_channel_83 (
             .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-            .x_out(chan_x_83),
-            .dist_out(chan_dist_83)
+            .x_out(chan_x_bus[1660 +: 20]),
+            .dist_out(chan_dist_bus[1328 +: 16])
         );
 
-
-endgenerate
-
-// -----------------------------------------------------------------------------
-// 5. Find Minimum Distance (Combinational Logic)
-// -----------------------------------------------------------------------------
-// Note: For high frequency, consider pipelining this tree. 
-// For now, a simple loop is used as per original design, but logic is clean.
-reg [15:0] min_dist;
-reg [6:0]  min_idx;
-
-// --- Part 4: Static Unrolled Min Finder (No Loops, No Dynamic Slicing) ---
-always @(*) begin : find_min_static
-    min_dist = 16'hFFFF;
-    min_idx = 7'd0;
-
-    if (chan_dist_0 < min_dist) begin
-        min_dist = chan_dist_0;
-        min_idx = 7'd0;
-    end
-    if (chan_dist_1 < min_dist) begin
-        min_dist = chan_dist_1;
-        min_idx = 7'd1;
-    end
-    if (chan_dist_2 < min_dist) begin
-        min_dist = chan_dist_2;
-        min_idx = 7'd2;
-    end
-    if (chan_dist_3 < min_dist) begin
-        min_dist = chan_dist_3;
-        min_idx = 7'd3;
-    end
-    if (chan_dist_4 < min_dist) begin
-        min_dist = chan_dist_4;
-        min_idx = 7'd4;
-    end
-    if (chan_dist_5 < min_dist) begin
-        min_dist = chan_dist_5;
-        min_idx = 7'd5;
-    end
-    if (chan_dist_6 < min_dist) begin
-        min_dist = chan_dist_6;
-        min_idx = 7'd6;
-    end
-    if (chan_dist_7 < min_dist) begin
-        min_dist = chan_dist_7;
-        min_idx = 7'd7;
-    end
-    if (chan_dist_8 < min_dist) begin
-        min_dist = chan_dist_8;
-        min_idx = 7'd8;
-    end
-    if (chan_dist_9 < min_dist) begin
-        min_dist = chan_dist_9;
-        min_idx = 7'd9;
-    end
-    if (chan_dist_10 < min_dist) begin
-        min_dist = chan_dist_10;
-        min_idx = 7'd10;
-    end
-    if (chan_dist_11 < min_dist) begin
-        min_dist = chan_dist_11;
-        min_idx = 7'd11;
-    end
-    if (chan_dist_12 < min_dist) begin
-        min_dist = chan_dist_12;
-        min_idx = 7'd12;
-    end
-    if (chan_dist_13 < min_dist) begin
-        min_dist = chan_dist_13;
-        min_idx = 7'd13;
-    end
-    if (chan_dist_14 < min_dist) begin
-        min_dist = chan_dist_14;
-        min_idx = 7'd14;
-    end
-    if (chan_dist_15 < min_dist) begin
-        min_dist = chan_dist_15;
-        min_idx = 7'd15;
-    end
-    if (chan_dist_16 < min_dist) begin
-        min_dist = chan_dist_16;
-        min_idx = 7'd16;
-    end
-    if (chan_dist_17 < min_dist) begin
-        min_dist = chan_dist_17;
-        min_idx = 7'd17;
-    end
-    if (chan_dist_18 < min_dist) begin
-        min_dist = chan_dist_18;
-        min_idx = 7'd18;
-    end
-    if (chan_dist_19 < min_dist) begin
-        min_dist = chan_dist_19;
-        min_idx = 7'd19;
-    end
-    if (chan_dist_20 < min_dist) begin
-        min_dist = chan_dist_20;
-        min_idx = 7'd20;
-    end
-    if (chan_dist_21 < min_dist) begin
-        min_dist = chan_dist_21;
-        min_idx = 7'd21;
-    end
-    if (chan_dist_22 < min_dist) begin
-        min_dist = chan_dist_22;
-        min_idx = 7'd22;
-    end
-    if (chan_dist_23 < min_dist) begin
-        min_dist = chan_dist_23;
-        min_idx = 7'd23;
-    end
-    if (chan_dist_24 < min_dist) begin
-        min_dist = chan_dist_24;
-        min_idx = 7'd24;
-    end
-    if (chan_dist_25 < min_dist) begin
-        min_dist = chan_dist_25;
-        min_idx = 7'd25;
-    end
-    if (chan_dist_26 < min_dist) begin
-        min_dist = chan_dist_26;
-        min_idx = 7'd26;
-    end
-    if (chan_dist_27 < min_dist) begin
-        min_dist = chan_dist_27;
-        min_idx = 7'd27;
-    end
-    if (chan_dist_28 < min_dist) begin
-        min_dist = chan_dist_28;
-        min_idx = 7'd28;
-    end
-    if (chan_dist_29 < min_dist) begin
-        min_dist = chan_dist_29;
-        min_idx = 7'd29;
-    end
-    if (chan_dist_30 < min_dist) begin
-        min_dist = chan_dist_30;
-        min_idx = 7'd30;
-    end
-    if (chan_dist_31 < min_dist) begin
-        min_dist = chan_dist_31;
-        min_idx = 7'd31;
-    end
-    if (chan_dist_32 < min_dist) begin
-        min_dist = chan_dist_32;
-        min_idx = 7'd32;
-    end
-    if (chan_dist_33 < min_dist) begin
-        min_dist = chan_dist_33;
-        min_idx = 7'd33;
-    end
-    if (chan_dist_34 < min_dist) begin
-        min_dist = chan_dist_34;
-        min_idx = 7'd34;
-    end
-    if (chan_dist_35 < min_dist) begin
-        min_dist = chan_dist_35;
-        min_idx = 7'd35;
-    end
-    if (chan_dist_36 < min_dist) begin
-        min_dist = chan_dist_36;
-        min_idx = 7'd36;
-    end
-    if (chan_dist_37 < min_dist) begin
-        min_dist = chan_dist_37;
-        min_idx = 7'd37;
-    end
-    if (chan_dist_38 < min_dist) begin
-        min_dist = chan_dist_38;
-        min_idx = 7'd38;
-    end
-    if (chan_dist_39 < min_dist) begin
-        min_dist = chan_dist_39;
-        min_idx = 7'd39;
-    end
-    if (chan_dist_40 < min_dist) begin
-        min_dist = chan_dist_40;
-        min_idx = 7'd40;
-    end
-    if (chan_dist_41 < min_dist) begin
-        min_dist = chan_dist_41;
-        min_idx = 7'd41;
-    end
-    if (chan_dist_42 < min_dist) begin
-        min_dist = chan_dist_42;
-        min_idx = 7'd42;
-    end
-    if (chan_dist_43 < min_dist) begin
-        min_dist = chan_dist_43;
-        min_idx = 7'd43;
-    end
-    if (chan_dist_44 < min_dist) begin
-        min_dist = chan_dist_44;
-        min_idx = 7'd44;
-    end
-    if (chan_dist_45 < min_dist) begin
-        min_dist = chan_dist_45;
-        min_idx = 7'd45;
-    end
-    if (chan_dist_46 < min_dist) begin
-        min_dist = chan_dist_46;
-        min_idx = 7'd46;
-    end
-    if (chan_dist_47 < min_dist) begin
-        min_dist = chan_dist_47;
-        min_idx = 7'd47;
-    end
-    if (chan_dist_48 < min_dist) begin
-        min_dist = chan_dist_48;
-        min_idx = 7'd48;
-    end
-    if (chan_dist_49 < min_dist) begin
-        min_dist = chan_dist_49;
-        min_idx = 7'd49;
-    end
-    if (chan_dist_50 < min_dist) begin
-        min_dist = chan_dist_50;
-        min_idx = 7'd50;
-    end
-    if (chan_dist_51 < min_dist) begin
-        min_dist = chan_dist_51;
-        min_idx = 7'd51;
-    end
-    if (chan_dist_52 < min_dist) begin
-        min_dist = chan_dist_52;
-        min_idx = 7'd52;
-    end
-    if (chan_dist_53 < min_dist) begin
-        min_dist = chan_dist_53;
-        min_idx = 7'd53;
-    end
-    if (chan_dist_54 < min_dist) begin
-        min_dist = chan_dist_54;
-        min_idx = 7'd54;
-    end
-    if (chan_dist_55 < min_dist) begin
-        min_dist = chan_dist_55;
-        min_idx = 7'd55;
-    end
-    if (chan_dist_56 < min_dist) begin
-        min_dist = chan_dist_56;
-        min_idx = 7'd56;
-    end
-    if (chan_dist_57 < min_dist) begin
-        min_dist = chan_dist_57;
-        min_idx = 7'd57;
-    end
-    if (chan_dist_58 < min_dist) begin
-        min_dist = chan_dist_58;
-        min_idx = 7'd58;
-    end
-    if (chan_dist_59 < min_dist) begin
-        min_dist = chan_dist_59;
-        min_idx = 7'd59;
-    end
-    if (chan_dist_60 < min_dist) begin
-        min_dist = chan_dist_60;
-        min_idx = 7'd60;
-    end
-    if (chan_dist_61 < min_dist) begin
-        min_dist = chan_dist_61;
-        min_idx = 7'd61;
-    end
-    if (chan_dist_62 < min_dist) begin
-        min_dist = chan_dist_62;
-        min_idx = 7'd62;
-    end
-    if (chan_dist_63 < min_dist) begin
-        min_dist = chan_dist_63;
-        min_idx = 7'd63;
-    end
-    if (chan_dist_64 < min_dist) begin
-        min_dist = chan_dist_64;
-        min_idx = 7'd64;
-    end
-    if (chan_dist_65 < min_dist) begin
-        min_dist = chan_dist_65;
-        min_idx = 7'd65;
-    end
-    if (chan_dist_66 < min_dist) begin
-        min_dist = chan_dist_66;
-        min_idx = 7'd66;
-    end
-    if (chan_dist_67 < min_dist) begin
-        min_dist = chan_dist_67;
-        min_idx = 7'd67;
-    end
-    if (chan_dist_68 < min_dist) begin
-        min_dist = chan_dist_68;
-        min_idx = 7'd68;
-    end
-    if (chan_dist_69 < min_dist) begin
-        min_dist = chan_dist_69;
-        min_idx = 7'd69;
-    end
-    if (chan_dist_70 < min_dist) begin
-        min_dist = chan_dist_70;
-        min_idx = 7'd70;
-    end
-    if (chan_dist_71 < min_dist) begin
-        min_dist = chan_dist_71;
-        min_idx = 7'd71;
-    end
-    if (chan_dist_72 < min_dist) begin
-        min_dist = chan_dist_72;
-        min_idx = 7'd72;
-    end
-    if (chan_dist_73 < min_dist) begin
-        min_dist = chan_dist_73;
-        min_idx = 7'd73;
-    end
-    if (chan_dist_74 < min_dist) begin
-        min_dist = chan_dist_74;
-        min_idx = 7'd74;
-    end
-    if (chan_dist_75 < min_dist) begin
-        min_dist = chan_dist_75;
-        min_idx = 7'd75;
-    end
-    if (chan_dist_76 < min_dist) begin
-        min_dist = chan_dist_76;
-        min_idx = 7'd76;
-    end
-    if (chan_dist_77 < min_dist) begin
-        min_dist = chan_dist_77;
-        min_idx = 7'd77;
-    end
-    if (chan_dist_78 < min_dist) begin
-        min_dist = chan_dist_78;
-        min_idx = 7'd78;
-    end
-    if (chan_dist_79 < min_dist) begin
-        min_dist = chan_dist_79;
-        min_idx = 7'd79;
-    end
-    if (chan_dist_80 < min_dist) begin
-        min_dist = chan_dist_80;
-        min_idx = 7'd80;
-    end
-    if (chan_dist_81 < min_dist) begin
-        min_dist = chan_dist_81;
-        min_idx = 7'd81;
-    end
-    if (chan_dist_82 < min_dist) begin
-        min_dist = chan_dist_82;
-        min_idx = 7'd82;
-    end
-    if (chan_dist_83 < min_dist) begin
-        min_dist = chan_dist_83;
-        min_idx = 7'd83;
-    end
-end
-
-// --- Part 5: Static Output Mux ---
-always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        data_out <= 20'd0;
-        valid <= 1'b0;
-        uncorrectable <= 1'b0;
-    end else if (start) begin
-        // Static Mux for data_out
-        case(min_idx)
-            7'd0: data_out <= chan_x_0;
-            7'd1: data_out <= chan_x_1;
-            7'd2: data_out <= chan_x_2;
-            7'd3: data_out <= chan_x_3;
-            7'd4: data_out <= chan_x_4;
-            7'd5: data_out <= chan_x_5;
-            7'd6: data_out <= chan_x_6;
-            7'd7: data_out <= chan_x_7;
-            7'd8: data_out <= chan_x_8;
-            7'd9: data_out <= chan_x_9;
-            7'd10: data_out <= chan_x_10;
-            7'd11: data_out <= chan_x_11;
-            7'd12: data_out <= chan_x_12;
-            7'd13: data_out <= chan_x_13;
-            7'd14: data_out <= chan_x_14;
-            7'd15: data_out <= chan_x_15;
-            7'd16: data_out <= chan_x_16;
-            7'd17: data_out <= chan_x_17;
-            7'd18: data_out <= chan_x_18;
-            7'd19: data_out <= chan_x_19;
-            7'd20: data_out <= chan_x_20;
-            7'd21: data_out <= chan_x_21;
-            7'd22: data_out <= chan_x_22;
-            7'd23: data_out <= chan_x_23;
-            7'd24: data_out <= chan_x_24;
-            7'd25: data_out <= chan_x_25;
-            7'd26: data_out <= chan_x_26;
-            7'd27: data_out <= chan_x_27;
-            7'd28: data_out <= chan_x_28;
-            7'd29: data_out <= chan_x_29;
-            7'd30: data_out <= chan_x_30;
-            7'd31: data_out <= chan_x_31;
-            7'd32: data_out <= chan_x_32;
-            7'd33: data_out <= chan_x_33;
-            7'd34: data_out <= chan_x_34;
-            7'd35: data_out <= chan_x_35;
-            7'd36: data_out <= chan_x_36;
-            7'd37: data_out <= chan_x_37;
-            7'd38: data_out <= chan_x_38;
-            7'd39: data_out <= chan_x_39;
-            7'd40: data_out <= chan_x_40;
-            7'd41: data_out <= chan_x_41;
-            7'd42: data_out <= chan_x_42;
-            7'd43: data_out <= chan_x_43;
-            7'd44: data_out <= chan_x_44;
-            7'd45: data_out <= chan_x_45;
-            7'd46: data_out <= chan_x_46;
-            7'd47: data_out <= chan_x_47;
-            7'd48: data_out <= chan_x_48;
-            7'd49: data_out <= chan_x_49;
-            7'd50: data_out <= chan_x_50;
-            7'd51: data_out <= chan_x_51;
-            7'd52: data_out <= chan_x_52;
-            7'd53: data_out <= chan_x_53;
-            7'd54: data_out <= chan_x_54;
-            7'd55: data_out <= chan_x_55;
-            7'd56: data_out <= chan_x_56;
-            7'd57: data_out <= chan_x_57;
-            7'd58: data_out <= chan_x_58;
-            7'd59: data_out <= chan_x_59;
-            7'd60: data_out <= chan_x_60;
-            7'd61: data_out <= chan_x_61;
-            7'd62: data_out <= chan_x_62;
-            7'd63: data_out <= chan_x_63;
-            7'd64: data_out <= chan_x_64;
-            7'd65: data_out <= chan_x_65;
-            7'd66: data_out <= chan_x_66;
-            7'd67: data_out <= chan_x_67;
-            7'd68: data_out <= chan_x_68;
-            7'd69: data_out <= chan_x_69;
-            7'd70: data_out <= chan_x_70;
-            7'd71: data_out <= chan_x_71;
-            7'd72: data_out <= chan_x_72;
-            7'd73: data_out <= chan_x_73;
-            7'd74: data_out <= chan_x_74;
-            7'd75: data_out <= chan_x_75;
-            7'd76: data_out <= chan_x_76;
-            7'd77: data_out <= chan_x_77;
-            7'd78: data_out <= chan_x_78;
-            7'd79: data_out <= chan_x_79;
-            7'd80: data_out <= chan_x_80;
-            7'd81: data_out <= chan_x_81;
-            7'd82: data_out <= chan_x_82;
-            7'd83: data_out <= chan_x_83;
-            default: data_out <= 20'd0;
-        endcase
-        valid <= 1'b1;
-        uncorrectable <= (min_dist > 16'd100) ? 1'b1 : 1'b0;
-    end
-end
-
-
-// -----------------------------------------------------------------------------
-// 6. Output Registers (STATIC VERSION - No Dynamic Slicing)
-// -----------------------------------------------------------------------------
-always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        data_out      <= 20'd0;
-        valid         <= 1'b0;
-        uncorrectable <= 1'b0;
-    end else if (start) begin
-        // 使用巨大的 case 语句替代动态切片 chan_x_bus[min_idx*20 +: 20]
-        case(min_idx)
-            7'd0:  data_out <= chan_x_0;
-            7'd1:  data_out <= chan_x_1;
-            7'd2:  data_out <= chan_x_2;
-            7'd3:  data_out <= chan_x_3;
-            7'd4:  data_out <= chan_x_4;
-            7'd5:  data_out <= chan_x_5;
-            7'd6:  data_out <= chan_x_6;
-            7'd7:  data_out <= chan_x_7;
-            7'd8:  data_out <= chan_x_8;
-            7'd9:  data_out <= chan_x_9;
-            7'd10: data_out <= chan_x_10;
-            7'd11: data_out <= chan_x_11;
-            7'd12: data_out <= chan_x_12;
-            7'd13: data_out <= chan_x_13;
-            7'd14: data_out <= chan_x_14;
-            7'd15: data_out <= chan_x_15;
-            7'd16: data_out <= chan_x_16;
-            7'd17: data_out <= chan_x_17;
-            7'd18: data_out <= chan_x_18;
-            7'd19: data_out <= chan_x_19;
-            7'd20: data_out <= chan_x_20;
-            7'd21: data_out <= chan_x_21;
-            7'd22: data_out <= chan_x_22;
-            7'd23: data_out <= chan_x_23;
-            7'd24: data_out <= chan_x_24;
-            7'd25: data_out <= chan_x_25;
-            7'd26: data_out <= chan_x_26;
-            7'd27: data_out <= chan_x_27;
-            7'd28: data_out <= chan_x_28;
-            7'd29: data_out <= chan_x_29;
-            7'd30: data_out <= chan_x_30;
-            7'd31: data_out <= chan_x_31;
-            7'd32: data_out <= chan_x_32;
-            7'd33: data_out <= chan_x_33;
-            7'd34: data_out <= chan_x_34;
-            7'd35: data_out <= chan_x_35;
-            7'd36: data_out <= chan_x_36;
-            7'd37: data_out <= chan_x_37;
-            7'd38: data_out <= chan_x_38;
-            7'd39: data_out <= chan_x_39;
-            7'd40: data_out <= chan_x_40;
-            7'd41: data_out <= chan_x_41;
-            7'd42: data_out <= chan_x_42;
-            7'd43: data_out <= chan_x_43;
-            7'd44: data_out <= chan_x_44;
-            7'd45: data_out <= chan_x_45;
-            7'd46: data_out <= chan_x_46;
-            7'd47: data_out <= chan_x_47;
-            7'd48: data_out <= chan_x_48;
-            7'd49: data_out <= chan_x_49;
-            7'd50: data_out <= chan_x_50;
-            7'd51: data_out <= chan_x_51;
-            7'd52: data_out <= chan_x_52;
-            7'd53: data_out <= chan_x_53;
-            7'd54: data_out <= chan_x_54;
-            7'd55: data_out <= chan_x_55;
-            7'd56: data_out <= chan_x_56;
-            7'd57: data_out <= chan_x_57;
-            7'd58: data_out <= chan_x_58;
-            7'd59: data_out <= chan_x_59;
-            7'd60: data_out <= chan_x_60;
-            7'd61: data_out <= chan_x_61;
-            7'd62: data_out <= chan_x_62;
-            7'd63: data_out <= chan_x_63;
-            7'd64: data_out <= chan_x_64;
-            7'd65: data_out <= chan_x_65;
-            7'd66: data_out <= chan_x_66;
-            7'd67: data_out <= chan_x_67;
-            7'd68: data_out <= chan_x_68;
-            7'd69: data_out <= chan_x_69;
-            7'd70: data_out <= chan_x_70;
-            7'd71: data_out <= chan_x_71;
-            7'd72: data_out <= chan_x_72;
-            7'd73: data_out <= chan_x_73;
-            7'd74: data_out <= chan_x_74;
-            7'd75: data_out <= chan_x_75;
-            7'd76: data_out <= chan_x_76;
-            7'd77: data_out <= chan_x_77;
-            7'd78: data_out <= chan_x_78;
-            7'd79: data_out <= chan_x_79;
-            7'd80: data_out <= chan_x_80;
-            7'd81: data_out <= chan_x_81;
-            7'd82: data_out <= chan_x_82;
-            7'd83: data_out <= chan_x_83;
-            default: data_out <= 20'd0;
-        endcase
-        
-        valid         <= 1'b1;
-        uncorrectable <= (min_dist > 16'd100) ? 1'b1 : 1'b0;
-    end
-end
-
-endmodule

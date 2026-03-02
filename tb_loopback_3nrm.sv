@@ -14,7 +14,7 @@ module tb_loopback_3nrm;
     wire uncorrectable;
 
     // Instantiate the Unit Under Test (UUT)
-    decoder_top_test  uut (
+    decoder_3nrm_mld  uut (
         .clk(clk), 
         .rst_n(rst_n), 
         .start(start), 
