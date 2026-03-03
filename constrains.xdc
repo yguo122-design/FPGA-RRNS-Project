@@ -1,15 +1,29 @@
-## 这个是对encoder_3nrm_mld, decoder_3nrm_mld进行测试，使用UART进行信息反馈的一个配置文件
-## Clock
+## ---------------------------------------------------------
+## Arty A7-100T Constraints for RRNS Test
+## Top Module: test_controller
+## ---------------------------------------------------------
+
+## 1. Clock (100MHz)
 set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS33 } [get_ports { clk }]
 create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports { clk }]
 
-## Switch 0 (用作复位)
-set_property -dict { PACKAGE_PIN A8 IOSTANDARD LVCMOS33 } [get_ports { sw0 }]
+## 2. Reset (Switch 0: OFF=Reset, ON=Run)
+## 对应代码端口: rst_n
+set_property -dict { PACKAGE_PIN A8 IOSTANDARD LVCMOS33 } [get_ports { rst_n }]
 
-## LEDs (LD4, LD5)
-## 注意：您提供的 XDC 中 led[0] 是 LD4, led[1] 是 LD5
-set_property -dict { PACKAGE_PIN H5 IOSTANDARD LVCMOS33 } [get_ports { led0 }] # LD4
-set_property -dict { PACKAGE_PIN J5 IOSTANDARD LVCMOS33 } [get_ports { led1 }] # LD5
+## 3. LEDs
+## LD4 (H5) -> Pass
+## LD5 (J5) -> Fail
+## 对应代码端口: led_pass, led_fail
+set_property -dict { PACKAGE_PIN H5 IOSTANDARD LVCMOS33 } [get_ports { led_pass }] 
+set_property -dict { PACKAGE_PIN J5 IOSTANDARD LVCMOS33 } [get_ports { led_fail }] 
 
-## UART TX
-set_property -dict { PACKAGE_PIN D10 IOSTANDARD LVCMOS33 } [get_ports { uart_tx_pin }]
+## 4. UART TX
+## 对应代码端口: uart_tx (即 uart_tx.u_uart_tx_inst.uart_tx_pin)
+## Pin D10 是 FPGA TX -> 电脑 USB-UART RX
+set_property -dict { PACKAGE_PIN D10 IOSTANDARD LVCMOS33 } [get_ports { uart_tx }]
+## UART RX
+set_property -dict { PACKAGE_PIN A9 IOSTANDARD LVCMOS33 } [get_ports { uart_rx }]
+
+set_property CFGBVS VCCO [current_design]
+set_property CONFIG_VOLTAGE 3.3 [current_design]

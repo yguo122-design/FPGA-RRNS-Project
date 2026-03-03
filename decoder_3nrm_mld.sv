@@ -1,992 +1,897 @@
 `timescale 1ns / 1ps
 
-// =============================================================================
-// Module: decoder_3nrm_mld
-// Format: SystemVerilog (.sv)
-// Strategy: Flat instantiation connecting to SV Unpacked Arrays
-//           NO generate loop for instances (due to unique parameters)
-// =============================================================================
-
 module decoder_3nrm_mld (
     input wire clk,
     input wire rst_n,
-    input wire start,
-    input wire [62:0] residues_in,
-    output logic [19:0] data_out,
-    output logic valid,
-    output logic uncorrectable
+    input wire start,             // 启动脉冲
+    input wire [63:0] residues_in,// 64-bit 输入总线
+    output reg [19:0] data_out,   // 最终解码结果
+    output reg valid,             // 输出有效标志
+    output reg uncorrectable      // 无法纠错标志
 );
 
-    // --- Input Unpacking ---
-    // --- Input Unpacking (FIXED: All mapped to [6:0] to match channel_unit) ---
-    // 原始数据位宽：r0(6), r1(6), r2(7), r3(5), r4(5), r5(5), r6(5), r7(5), r8(4)
-    // 目标端口位宽：全部 [6:0] (7 bits)
+    // ------------------------------------------------------------------
+    // 1. 参数定义
+    // ------------------------------------------------------------------
+    localparam NUM_COMBINATIONS = 84;
+    localparam CNT_WIDTH = 7; 
+
+    // ------------------------------------------------------------------
+    // 2. 输入解包 (9 个余数)
+    // ------------------------------------------------------------------
+    // 对应模数：64, 63, 65, 31, 29, 23, 19, 17, 11
+    wire [6:0] r_all [0:8];
     
-    logic [6:0] r0 = {1'b0, residues_in[62:57]}; // 6位 -> 补1个0 -> 7位
-    logic [6:0] r1 = {1'b0, residues_in[55:50]}; // 6位 -> 补1个0 -> 7位
-    logic [6:0] r2 = residues_in[48:42];         // 7位 -> 刚好
-    logic [6:0] r3 = {2'b00, residues_in[41:37]}; // 5位 -> 补2个0 -> 7位
-    logic [6:0] r4 = {2'b00, residues_in[36:32]}; // 5位 -> 补2个0 -> 7位
-    logic [6:0] r5 = {2'b00, residues_in[31:27]}; // 5位 -> 补2个0 -> 7位
-    logic [6:0] r6 = {2'b00, residues_in[26:22]}; // 5位 -> 补2个0 -> 7位
-    logic [6:0] r7 = {2'b00, residues_in[21:17]}; // 5位 -> 补2个0 -> 7位
-    logic [6:0] r8 = {3'b000, residues_in[16:13]}; // 4位 -> 补3个0 -> 7位
-
-    // --- Channel Signal Arrays (SystemVerilog Unpacked Arrays) ---
-    logic [19:0] chan_x [0:83];
-    logic [15:0] chan_dist [0:83];
-
-    // --- 84 Channel Instances (Unique Parameters, Array Connections) ---
-    channel_unit #(
-        .P_MI0(20'd4095), .P_MI1(20'd4160), .P_MI2(20'd4032),
-        .P_INV0(20'd63), .P_INV1(20'd32), .P_INV2(20'd33),
-        .P_M_TOTAL(20'd262080),
-        .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd2)
-    ) u_channel_0 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[0]),
-        .dist_out(chan_dist[0])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1953), .P_MI1(20'd1984), .P_MI2(20'd4032),
-        .P_INV0(20'd33), .P_INV1(20'd61), .P_INV2(20'd16),
-        .P_M_TOTAL(20'd124992),
-        .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd3)
-    ) u_channel_1 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[1]),
-        .dist_out(chan_dist[1])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1827), .P_MI1(20'd1856), .P_MI2(20'd4032),
-        .P_INV0(20'd11), .P_INV1(20'd50), .P_INV2(20'd1),
-        .P_M_TOTAL(20'd116928),
-        .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd4)
-    ) u_channel_2 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[2]),
-        .dist_out(chan_dist[2])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1449), .P_MI1(20'd1472), .P_MI2(20'd4032),
-        .P_INV0(20'd25), .P_INV1(20'd11), .P_INV2(20'd10),
-        .P_M_TOTAL(20'd92736),
-        .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd5)
-    ) u_channel_3 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[3]),
-        .dist_out(chan_dist[3])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1197), .P_MI1(20'd1216), .P_MI2(20'd4032),
-        .P_INV0(20'd37), .P_INV1(20'd10), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd76608),
-        .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd6)
-    ) u_channel_4 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[4]),
-        .dist_out(chan_dist[4])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1071), .P_MI1(20'd1088), .P_MI2(20'd4032),
-        .P_INV0(20'd15), .P_INV1(20'd26), .P_INV2(20'd6),
-        .P_M_TOTAL(20'd68544),
-        .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd7)
-    ) u_channel_5 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[5]),
-        .dist_out(chan_dist[5])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd693), .P_MI1(20'd704), .P_MI2(20'd4032),
-        .P_INV0(20'd29), .P_INV1(20'd23), .P_INV2(20'd2),
-        .P_M_TOTAL(20'd44352),
-        .P_IDX1(4'd0), .P_IDX2(4'd1), .P_IDX3(4'd8)
-    ) u_channel_6 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[6]),
-        .dist_out(chan_dist[6])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd2015), .P_MI1(20'd1984), .P_MI2(20'd4160),
-        .P_INV0(20'd31), .P_INV1(20'd44), .P_INV2(20'd26),
-        .P_M_TOTAL(20'd128960),
-        .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd3)
-    ) u_channel_7 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[7]),
-        .dist_out(chan_dist[7])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1885), .P_MI1(20'd1856), .P_MI2(20'd4160),
-        .P_INV0(20'd53), .P_INV1(20'd56), .P_INV2(20'd9),
-        .P_M_TOTAL(20'd120640),
-        .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd4)
-    ) u_channel_8 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[8]),
-        .dist_out(chan_dist[8])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1495), .P_MI1(20'd1472), .P_MI2(20'd4160),
-        .P_INV0(20'd39), .P_INV1(20'd48), .P_INV2(20'd15),
-        .P_M_TOTAL(20'd95680),
-        .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd5)
-    ) u_channel_9 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[9]),
-        .dist_out(chan_dist[9])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1235), .P_MI1(20'd1216), .P_MI2(20'd4160),
-        .P_INV0(20'd27), .P_INV1(20'd41), .P_INV2(20'd18),
-        .P_M_TOTAL(20'd79040),
-        .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd6)
-    ) u_channel_10 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[10]),
-        .dist_out(chan_dist[10])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1105), .P_MI1(20'd1088), .P_MI2(20'd4160),
-        .P_INV0(20'd49), .P_INV1(20'd42), .P_INV2(20'd10),
-        .P_M_TOTAL(20'd70720),
-        .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd7)
-    ) u_channel_11 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[11]),
-        .dist_out(chan_dist[11])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd715), .P_MI1(20'd704), .P_MI2(20'd4160),
-        .P_INV0(20'd35), .P_INV1(20'd59), .P_INV2(20'd6),
-        .P_M_TOTAL(20'd45760),
-        .P_IDX1(4'd0), .P_IDX2(4'd2), .P_IDX3(4'd8)
-    ) u_channel_12 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[12]),
-        .dist_out(chan_dist[12])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd899), .P_MI1(20'd1856), .P_MI2(20'd1984),
-        .P_INV0(20'd43), .P_INV1(20'd23), .P_INV2(20'd17),
-        .P_M_TOTAL(20'd57536),
-        .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd4)
-    ) u_channel_13 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[13]),
-        .dist_out(chan_dist[13])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd713), .P_MI1(20'd1472), .P_MI2(20'd1984),
-        .P_INV0(20'd57), .P_INV1(20'd29), .P_INV2(20'd4),
-        .P_M_TOTAL(20'd45632),
-        .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd5)
-    ) u_channel_14 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[14]),
-        .dist_out(chan_dist[14])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd589), .P_MI1(20'd1216), .P_MI2(20'd1984),
-        .P_INV0(20'd5), .P_INV1(20'd9), .P_INV2(20'd12),
-        .P_M_TOTAL(20'd37696),
-        .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd6)
-    ) u_channel_15 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[15]),
-        .dist_out(chan_dist[15])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd527), .P_MI1(20'd1088), .P_MI2(20'd1984),
-        .P_INV0(20'd47), .P_INV1(20'd21), .P_INV2(20'd10),
-        .P_M_TOTAL(20'd33728),
-        .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd7)
-    ) u_channel_16 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[16]),
-        .dist_out(chan_dist[16])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd341), .P_MI1(20'd704), .P_MI2(20'd1984),
-        .P_INV0(20'd61), .P_INV1(20'd24), .P_INV2(20'd3),
-        .P_M_TOTAL(20'd21824),
-        .P_IDX1(4'd0), .P_IDX2(4'd3), .P_IDX3(4'd8)
-    ) u_channel_17 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[17]),
-        .dist_out(chan_dist[17])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd667), .P_MI1(20'd1472), .P_MI2(20'd1856),
-        .P_INV0(20'd19), .P_INV1(20'd4), .P_INV2(20'd13),
-        .P_M_TOTAL(20'd42688),
-        .P_IDX1(4'd0), .P_IDX2(4'd4), .P_IDX3(4'd5)
-    ) u_channel_18 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[18]),
-        .dist_out(chan_dist[18])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd551), .P_MI1(20'd1216), .P_MI2(20'd1856),
-        .P_INV0(20'd23), .P_INV1(20'd14), .P_INV2(20'd3),
-        .P_M_TOTAL(20'd35264),
-        .P_IDX1(4'd0), .P_IDX2(4'd4), .P_IDX3(4'd6)
-    ) u_channel_19 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[19]),
-        .dist_out(chan_dist[19])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd493), .P_MI1(20'd1088), .P_MI2(20'd1856),
-        .P_INV0(20'd37), .P_INV1(20'd2), .P_INV2(20'd6),
-        .P_M_TOTAL(20'd31552),
-        .P_IDX1(4'd0), .P_IDX2(4'd4), .P_IDX3(4'd7)
-    ) u_channel_20 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[20]),
-        .dist_out(chan_dist[20])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd319), .P_MI1(20'd704), .P_MI2(20'd1856),
-        .P_INV0(20'd63), .P_INV1(20'd11), .P_INV2(20'd7),
-        .P_M_TOTAL(20'd20416),
-        .P_IDX1(4'd0), .P_IDX2(4'd4), .P_IDX3(4'd8)
-    ) u_channel_21 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[21]),
-        .dist_out(chan_dist[21])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd437), .P_MI1(20'd1216), .P_MI2(20'd1472),
-        .P_INV0(20'd29), .P_INV1(20'd15), .P_INV2(20'd17),
-        .P_M_TOTAL(20'd27968),
-        .P_IDX1(4'd0), .P_IDX2(4'd5), .P_IDX3(4'd6)
-    ) u_channel_22 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[22]),
-        .dist_out(chan_dist[22])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd391), .P_MI1(20'd1088), .P_MI2(20'd1472),
-        .P_INV0(20'd55), .P_INV1(20'd10), .P_INV2(20'd12),
-        .P_M_TOTAL(20'd25024),
-        .P_IDX1(4'd0), .P_IDX2(4'd5), .P_IDX3(4'd7)
-    ) u_channel_23 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[23]),
-        .dist_out(chan_dist[23])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd253), .P_MI1(20'd704), .P_MI2(20'd1472),
-        .P_INV0(20'd21), .P_INV1(20'd5), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd16192),
-        .P_IDX1(4'd0), .P_IDX2(4'd5), .P_IDX3(4'd8)
-    ) u_channel_24 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[24]),
-        .dist_out(chan_dist[24])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd323), .P_MI1(20'd1088), .P_MI2(20'd1216),
-        .P_INV0(20'd43), .P_INV1(20'd4), .P_INV2(20'd2),
-        .P_M_TOTAL(20'd20672),
-        .P_IDX1(4'd0), .P_IDX2(4'd6), .P_IDX3(4'd7)
-    ) u_channel_25 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[25]),
-        .dist_out(chan_dist[25])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd209), .P_MI1(20'd704), .P_MI2(20'd1216),
-        .P_INV0(20'd49), .P_INV1(20'd1), .P_INV2(20'd2),
-        .P_M_TOTAL(20'd13376),
-        .P_IDX1(4'd0), .P_IDX2(4'd6), .P_IDX3(4'd8)
-    ) u_channel_26 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[26]),
-        .dist_out(chan_dist[26])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd187), .P_MI1(20'd704), .P_MI2(20'd1088),
-        .P_INV0(20'd51), .P_INV1(20'd5), .P_INV2(20'd10),
-        .P_M_TOTAL(20'd11968),
-        .P_IDX1(4'd0), .P_IDX2(4'd7), .P_IDX3(4'd8)
-    ) u_channel_27 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[27]),
-        .dist_out(chan_dist[27])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd2015), .P_MI1(20'd1953), .P_MI2(20'd4095),
-        .P_INV0(20'd62), .P_INV1(20'd22), .P_INV2(20'd21),
-        .P_M_TOTAL(20'd126945),
-        .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd3)
-    ) u_channel_28 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[28]),
-        .dist_out(chan_dist[28])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1885), .P_MI1(20'd1827), .P_MI2(20'd4095),
-        .P_INV0(20'd25), .P_INV1(20'd28), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd118755),
-        .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd4)
-    ) u_channel_29 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[29]),
-        .dist_out(chan_dist[29])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1495), .P_MI1(20'd1449), .P_MI2(20'd4095),
-        .P_INV0(20'd37), .P_INV1(20'd24), .P_INV2(20'd1),
-        .P_M_TOTAL(20'd94185),
-        .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd5)
-    ) u_channel_30 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[30]),
-        .dist_out(chan_dist[30])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1235), .P_MI1(20'd1197), .P_MI2(20'd4095),
-        .P_INV0(20'd5), .P_INV1(20'd53), .P_INV2(20'd2),
-        .P_M_TOTAL(20'd77805),
-        .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd6)
-    ) u_channel_31 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[31]),
-        .dist_out(chan_dist[31])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd1105), .P_MI1(20'd1071), .P_MI2(20'd4095),
-        .P_INV0(20'd13), .P_INV1(20'd21), .P_INV2(20'd8),
-        .P_M_TOTAL(20'd69615),
-        .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd7)
-    ) u_channel_32 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[32]),
-        .dist_out(chan_dist[32])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd715), .P_MI1(20'd693), .P_MI2(20'd4095),
-        .P_INV0(20'd43), .P_INV1(20'd62), .P_INV2(20'd4),
-        .P_M_TOTAL(20'd45045),
-        .P_IDX1(4'd1), .P_IDX2(4'd2), .P_IDX3(4'd8)
-    ) u_channel_33 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[33]),
-        .dist_out(chan_dist[33])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd899), .P_MI1(20'd1827), .P_MI2(20'd1953),
-        .P_INV0(20'd26), .P_INV1(20'd15), .P_INV2(20'd3),
-        .P_M_TOTAL(20'd56637),
-        .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd4)
-    ) u_channel_34 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[34]),
-        .dist_out(chan_dist[34])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd713), .P_MI1(20'd1449), .P_MI2(20'd1953),
-        .P_INV0(20'd41), .P_INV1(20'd27), .P_INV2(20'd11),
-        .P_M_TOTAL(20'd44919),
-        .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd5)
-    ) u_channel_35 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[35]),
-        .dist_out(chan_dist[35])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd589), .P_MI1(20'd1197), .P_MI2(20'd1953),
-        .P_INV0(20'd43), .P_INV1(20'd18), .P_INV2(20'd14),
-        .P_M_TOTAL(20'd37107),
-        .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd6)
-    ) u_channel_36 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[36]),
-        .dist_out(chan_dist[36])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd527), .P_MI1(20'd1071), .P_MI2(20'd1953),
-        .P_INV0(20'd11), .P_INV1(20'd11), .P_INV2(20'd8),
-        .P_M_TOTAL(20'd33201),
-        .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd7)
-    ) u_channel_37 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[37]),
-        .dist_out(chan_dist[37])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd341), .P_MI1(20'd693), .P_MI2(20'd1953),
-        .P_INV0(20'd17), .P_INV1(20'd17), .P_INV2(20'd2),
-        .P_M_TOTAL(20'd21483),
-        .P_IDX1(4'd1), .P_IDX2(4'd3), .P_IDX3(4'd8)
-    ) u_channel_38 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[38]),
-        .dist_out(chan_dist[38])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd667), .P_MI1(20'd1449), .P_MI2(20'd1827),
-        .P_INV0(20'd46), .P_INV1(20'd28), .P_INV2(20'd7),
-        .P_M_TOTAL(20'd42021),
-        .P_IDX1(4'd1), .P_IDX2(4'd4), .P_IDX3(4'd5)
-    ) u_channel_39 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[39]),
-        .dist_out(chan_dist[39])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd551), .P_MI1(20'd1197), .P_MI2(20'd1827),
-        .P_INV0(20'd59), .P_INV1(20'd11), .P_INV2(20'd13),
-        .P_M_TOTAL(20'd34713),
-        .P_IDX1(4'd1), .P_IDX2(4'd4), .P_IDX3(4'd6)
-    ) u_channel_40 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[40]),
-        .dist_out(chan_dist[40])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd493), .P_MI1(20'd1071), .P_MI2(20'd1827),
-        .P_INV0(20'd40), .P_INV1(20'd14), .P_INV2(20'd15),
-        .P_M_TOTAL(20'd31059),
-        .P_IDX1(4'd1), .P_IDX2(4'd4), .P_IDX3(4'd7)
-    ) u_channel_41 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[41]),
-        .dist_out(chan_dist[41])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd319), .P_MI1(20'd693), .P_MI2(20'd1827),
-        .P_INV0(20'd16), .P_INV1(20'd19), .P_INV2(20'd1),
-        .P_M_TOTAL(20'd20097),
-        .P_IDX1(4'd1), .P_IDX2(4'd4), .P_IDX3(4'd8)
-    ) u_channel_42 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[42]),
-        .dist_out(chan_dist[42])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd437), .P_MI1(20'd1197), .P_MI2(20'd1449),
-        .P_INV0(20'd47), .P_INV1(20'd1), .P_INV2(20'd4),
-        .P_M_TOTAL(20'd27531),
-        .P_IDX1(4'd1), .P_IDX2(4'd5), .P_IDX3(4'd6)
-    ) u_channel_43 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[43]),
-        .dist_out(chan_dist[43])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd391), .P_MI1(20'd1071), .P_MI2(20'd1449),
-        .P_INV0(20'd34), .P_INV1(20'd16), .P_INV2(20'd13),
-        .P_M_TOTAL(20'd24633),
-        .P_IDX1(4'd1), .P_IDX2(4'd5), .P_IDX3(4'd7)
-    ) u_channel_44 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[44]),
-        .dist_out(chan_dist[44])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd253), .P_MI1(20'd693), .P_MI2(20'd1449),
-        .P_INV0(20'd1), .P_INV1(20'd8), .P_INV2(20'd7),
-        .P_M_TOTAL(20'd15939),
-        .P_IDX1(4'd1), .P_IDX2(4'd5), .P_IDX3(4'd8)
-    ) u_channel_45 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[45]),
-        .dist_out(chan_dist[45])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd323), .P_MI1(20'd1071), .P_MI2(20'd1197),
-        .P_INV0(20'd8), .P_INV1(20'd11), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd20349),
-        .P_IDX1(4'd1), .P_IDX2(4'd6), .P_IDX3(4'd7)
-    ) u_channel_46 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[46]),
-        .dist_out(chan_dist[46])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd209), .P_MI1(20'd693), .P_MI2(20'd1197),
-        .P_INV0(20'd41), .P_INV1(20'd17), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd13167),
-        .P_IDX1(4'd1), .P_IDX2(4'd6), .P_IDX3(4'd8)
-    ) u_channel_47 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[47]),
-        .dist_out(chan_dist[47])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd187), .P_MI1(20'd693), .P_MI2(20'd1071),
-        .P_INV0(20'd31), .P_INV1(20'd4), .P_INV2(20'd3),
-        .P_M_TOTAL(20'd11781),
-        .P_IDX1(4'd1), .P_IDX2(4'd7), .P_IDX3(4'd8)
-    ) u_channel_48 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[48]),
-        .dist_out(chan_dist[48])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd899), .P_MI1(20'd1885), .P_MI2(20'd2015),
-        .P_INV0(20'd59), .P_INV1(20'd5), .P_INV2(20'd27),
-        .P_M_TOTAL(20'd58435),
-        .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd4)
-    ) u_channel_49 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[49]),
-        .dist_out(chan_dist[49])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd713), .P_MI1(20'd1495), .P_MI2(20'd2015),
-        .P_INV0(20'd32), .P_INV1(20'd9), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd46345),
-        .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd5)
-    ) u_channel_50 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[50]),
-        .dist_out(chan_dist[50])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd589), .P_MI1(20'd1235), .P_MI2(20'd2015),
-        .P_INV0(20'd49), .P_INV1(20'd6), .P_INV2(20'd1),
-        .P_M_TOTAL(20'd38285),
-        .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd6)
-    ) u_channel_51 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[51]),
-        .dist_out(chan_dist[51])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd527), .P_MI1(20'd1105), .P_MI2(20'd2015),
-        .P_INV0(20'd28), .P_INV1(20'd14), .P_INV2(20'd2),
-        .P_M_TOTAL(20'd34255),
-        .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd7)
-    ) u_channel_52 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[52]),
-        .dist_out(chan_dist[52])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd341), .P_MI1(20'd715), .P_MI2(20'd2015),
-        .P_INV0(20'd61), .P_INV1(20'd16), .P_INV2(20'd6),
-        .P_M_TOTAL(20'd22165),
-        .P_IDX1(4'd2), .P_IDX2(4'd3), .P_IDX3(4'd8)
-    ) u_channel_53 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[53]),
-        .dist_out(chan_dist[53])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd667), .P_MI1(20'd1495), .P_MI2(20'd1885),
-        .P_INV0(20'd23), .P_INV1(20'd20), .P_INV2(20'd22),
-        .P_M_TOTAL(20'd43355),
-        .P_IDX1(4'd2), .P_IDX2(4'd4), .P_IDX3(4'd5)
-    ) u_channel_54 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[54]),
-        .dist_out(chan_dist[54])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd551), .P_MI1(20'd1235), .P_MI2(20'd1885),
-        .P_INV0(20'd21), .P_INV1(20'd12), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd35815),
-        .P_IDX1(4'd2), .P_IDX2(4'd4), .P_IDX3(4'd6)
-    ) u_channel_55 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[55]),
-        .dist_out(chan_dist[55])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd493), .P_MI1(20'd1105), .P_MI2(20'd1885),
-        .P_INV0(20'd12), .P_INV1(20'd10), .P_INV2(20'd8),
-        .P_M_TOTAL(20'd32045),
-        .P_IDX1(4'd2), .P_IDX2(4'd4), .P_IDX3(4'd7)
-    ) u_channel_56 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[56]),
-        .dist_out(chan_dist[56])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd319), .P_MI1(20'd715), .P_MI2(20'd1885),
-        .P_INV0(20'd54), .P_INV1(20'd26), .P_INV2(20'd3),
-        .P_M_TOTAL(20'd20735),
-        .P_IDX1(4'd2), .P_IDX2(4'd4), .P_IDX3(4'd8)
-    ) u_channel_57 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[57]),
-        .dist_out(chan_dist[57])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd437), .P_MI1(20'd1235), .P_MI2(20'd1495),
-        .P_INV0(20'd18), .P_INV1(20'd13), .P_INV2(20'd3),
-        .P_M_TOTAL(20'd28405),
-        .P_IDX1(4'd2), .P_IDX2(4'd5), .P_IDX3(4'd6)
-    ) u_channel_58 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[58]),
-        .dist_out(chan_dist[58])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd391), .P_MI1(20'd1105), .P_MI2(20'd1495),
-        .P_INV0(20'd1), .P_INV1(20'd1), .P_INV2(20'd16),
-        .P_M_TOTAL(20'd25415),
-        .P_IDX1(4'd2), .P_IDX2(4'd5), .P_IDX3(4'd7)
-    ) u_channel_59 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[59]),
-        .dist_out(chan_dist[59])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd253), .P_MI1(20'd715), .P_MI2(20'd1495),
-        .P_INV0(20'd37), .P_INV1(20'd12), .P_INV2(20'd10),
-        .P_M_TOTAL(20'd16445),
-        .P_IDX1(4'd2), .P_IDX2(4'd5), .P_IDX3(4'd8)
-    ) u_channel_60 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[60]),
-        .dist_out(chan_dist[60])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd323), .P_MI1(20'd1105), .P_MI2(20'd1235),
-        .P_INV0(20'd32), .P_INV1(20'd13), .P_INV2(20'd14),
-        .P_M_TOTAL(20'd20995),
-        .P_IDX1(4'd2), .P_IDX2(4'd6), .P_IDX3(4'd7)
-    ) u_channel_61 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[61]),
-        .dist_out(chan_dist[61])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd209), .P_MI1(20'd715), .P_MI2(20'd1235),
-        .P_INV0(20'd14), .P_INV1(20'd8), .P_INV2(20'd4),
-        .P_M_TOTAL(20'd13585),
-        .P_IDX1(4'd2), .P_IDX2(4'd6), .P_IDX3(4'd8)
-    ) u_channel_62 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[62]),
-        .dist_out(chan_dist[62])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd187), .P_MI1(20'd715), .P_MI2(20'd1105),
-        .P_INV0(20'd8), .P_INV1(20'd1), .P_INV2(20'd9),
-        .P_M_TOTAL(20'd12155),
-        .P_IDX1(4'd2), .P_IDX2(4'd7), .P_IDX3(4'd8)
-    ) u_channel_63 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[63]),
-        .dist_out(chan_dist[63])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd667), .P_MI1(20'd713), .P_MI2(20'd899),
-        .P_INV0(20'd2), .P_INV1(20'd12), .P_INV2(20'd12),
-        .P_M_TOTAL(20'd20677),
-        .P_IDX1(4'd3), .P_IDX2(4'd4), .P_IDX3(4'd5)
-    ) u_channel_64 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[64]),
-        .dist_out(chan_dist[64])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd551), .P_MI1(20'd589), .P_MI2(20'd899),
-        .P_INV0(20'd22), .P_INV1(20'd13), .P_INV2(20'd16),
-        .P_M_TOTAL(20'd17081),
-        .P_IDX1(4'd3), .P_IDX2(4'd4), .P_IDX3(4'd6)
-    ) u_channel_65 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[65]),
-        .dist_out(chan_dist[65])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd493), .P_MI1(20'd527), .P_MI2(20'd899),
-        .P_INV0(20'd10), .P_INV1(20'd6), .P_INV2(20'd8),
-        .P_M_TOTAL(20'd15283),
-        .P_IDX1(4'd3), .P_IDX2(4'd4), .P_IDX3(4'd7)
-    ) u_channel_66 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[66]),
-        .dist_out(chan_dist[66])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd319), .P_MI1(20'd341), .P_MI2(20'd899),
-        .P_INV0(20'd7), .P_INV1(20'd4), .P_INV2(20'd7),
-        .P_M_TOTAL(20'd9889),
-        .P_IDX1(4'd3), .P_IDX2(4'd4), .P_IDX3(4'd8)
-    ) u_channel_67 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[67]),
-        .dist_out(chan_dist[67])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd437), .P_MI1(20'd589), .P_MI2(20'd713),
-        .P_INV0(20'd21), .P_INV1(20'd5), .P_INV2(20'd2),
-        .P_M_TOTAL(20'd13547),
-        .P_IDX1(4'd3), .P_IDX2(4'd5), .P_IDX3(4'd6)
-    ) u_channel_68 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[68]),
-        .dist_out(chan_dist[68])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd391), .P_MI1(20'd527), .P_MI2(20'd713),
-        .P_INV0(20'd18), .P_INV1(20'd11), .P_INV2(20'd16),
-        .P_M_TOTAL(20'd12121),
-        .P_IDX1(4'd3), .P_IDX2(4'd5), .P_IDX3(4'd7)
-    ) u_channel_69 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[69]),
-        .dist_out(chan_dist[69])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd253), .P_MI1(20'd341), .P_MI2(20'd713),
-        .P_INV0(20'd25), .P_INV1(20'd17), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd7843),
-        .P_IDX1(4'd3), .P_IDX2(4'd5), .P_IDX3(4'd8)
-    ) u_channel_70 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[70]),
-        .dist_out(chan_dist[70])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd323), .P_MI1(20'd527), .P_MI2(20'd589),
-        .P_INV0(20'd12), .P_INV1(20'd15), .P_INV2(20'd14),
-        .P_M_TOTAL(20'd10013),
-        .P_IDX1(4'd3), .P_IDX2(4'd6), .P_IDX3(4'd7)
-    ) u_channel_71 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[71]),
-        .dist_out(chan_dist[71])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd209), .P_MI1(20'd341), .P_MI2(20'd589),
-        .P_INV0(20'd27), .P_INV1(20'd18), .P_INV2(20'd2),
-        .P_M_TOTAL(20'd6479),
-        .P_IDX1(4'd3), .P_IDX2(4'd6), .P_IDX3(4'd8)
-    ) u_channel_72 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[72]),
-        .dist_out(chan_dist[72])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd187), .P_MI1(20'd341), .P_MI2(20'd527),
-        .P_INV0(20'd1), .P_INV1(20'd1), .P_INV2(20'd10),
-        .P_M_TOTAL(20'd5797),
-        .P_IDX1(4'd3), .P_IDX2(4'd7), .P_IDX3(4'd8)
-    ) u_channel_73 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[73]),
-        .dist_out(chan_dist[73])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd437), .P_MI1(20'd551), .P_MI2(20'd667),
-        .P_INV0(20'd15), .P_INV1(20'd22), .P_INV2(20'd10),
-        .P_M_TOTAL(20'd12673),
-        .P_IDX1(4'd4), .P_IDX2(4'd5), .P_IDX3(4'd6)
-    ) u_channel_74 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[74]),
-        .dist_out(chan_dist[74])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd391), .P_MI1(20'd493), .P_MI2(20'd667),
-        .P_INV0(20'd27), .P_INV1(20'd7), .P_INV2(20'd13),
-        .P_M_TOTAL(20'd11339),
-        .P_IDX1(4'd4), .P_IDX2(4'd5), .P_IDX3(4'd7)
-    ) u_channel_75 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[75]),
-        .dist_out(chan_dist[75])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd253), .P_MI1(20'd319), .P_MI2(20'd667),
-        .P_INV0(20'd18), .P_INV1(20'd15), .P_INV2(20'd8),
-        .P_M_TOTAL(20'd7337),
-        .P_IDX1(4'd4), .P_IDX2(4'd5), .P_IDX3(4'd8)
-    ) u_channel_76 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[76]),
-        .dist_out(chan_dist[76])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd323), .P_MI1(20'd493), .P_MI2(20'd551),
-        .P_INV0(20'd22), .P_INV1(20'd18), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd9367),
-        .P_IDX1(4'd4), .P_IDX2(4'd6), .P_IDX3(4'd7)
-    ) u_channel_77 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[77]),
-        .dist_out(chan_dist[77])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd209), .P_MI1(20'd319), .P_MI2(20'd551),
-        .P_INV0(20'd5), .P_INV1(20'd14), .P_INV2(20'd1),
-        .P_M_TOTAL(20'd6061),
-        .P_IDX1(4'd4), .P_IDX2(4'd6), .P_IDX3(4'd8)
-    ) u_channel_78 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[78]),
-        .dist_out(chan_dist[78])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd187), .P_MI1(20'd319), .P_MI2(20'd493),
-        .P_INV0(20'd9), .P_INV1(20'd4), .P_INV2(20'd5),
-        .P_M_TOTAL(20'd5423),
-        .P_IDX1(4'd4), .P_IDX2(4'd7), .P_IDX3(4'd8)
-    ) u_channel_79 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[79]),
-        .dist_out(chan_dist[79])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd323), .P_MI1(20'd391), .P_MI2(20'd437),
-        .P_INV0(20'd1), .P_INV1(20'd7), .P_INV2(20'd10),
-        .P_M_TOTAL(20'd7429),
-        .P_IDX1(4'd5), .P_IDX2(4'd6), .P_IDX3(4'd7)
-    ) u_channel_80 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[80]),
-        .dist_out(chan_dist[80])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd209), .P_MI1(20'd253), .P_MI2(20'd437),
-        .P_INV0(20'd12), .P_INV1(20'd16), .P_INV2(20'd7),
-        .P_M_TOTAL(20'd4807),
-        .P_IDX1(4'd5), .P_IDX2(4'd6), .P_IDX3(4'd8)
-    ) u_channel_81 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[81]),
-        .dist_out(chan_dist[81])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd187), .P_MI1(20'd253), .P_MI2(20'd391),
-        .P_INV0(20'd8), .P_INV1(20'd8), .P_INV2(20'd2),
-        .P_M_TOTAL(20'd4301),
-        .P_IDX1(4'd5), .P_IDX2(4'd7), .P_IDX3(4'd8)
-    ) u_channel_82 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[82]),
-        .dist_out(chan_dist[82])
-    );
-
-    channel_unit #(
-        .P_MI0(20'd187), .P_MI1(20'd209), .P_MI2(20'd323),
-        .P_INV0(20'd6), .P_INV1(20'd7), .P_INV2(20'd3),
-        .P_M_TOTAL(20'd3553),
-        .P_IDX1(4'd6), .P_IDX2(4'd7), .P_IDX3(4'd8)
-    ) u_channel_83 (
-        .r0(r0), .r1(r1), .r2(r2), .r3(r3), .r4(r4), .r5(r5), .r6(r6), .r7(r7), .r8(r8),
-        .x_out(chan_x[83]),
-        .dist_out(chan_dist[83])
-    );
-
-    // --- Min Distance Finder (Native SV For-Loop) ---
-    logic [15:0] min_dist;
-    logic [6:0]  min_idx;
-
-    always_comb begin
-        min_dist = 16'hFFFF;
-        min_idx  = 7'd0;
-        for (int k = 0; k < 84; k++) begin
-            if (chan_dist[k] < min_dist) begin
-                min_dist = chan_dist[k];
-                min_idx  = k[6:0];
+    assign r_all[0] = {1'b0, residues_in[63:58]}; // mod 64
+    assign r_all[1] = {1'b0, residues_in[57:52]}; // mod 63
+    assign r_all[2] =       residues_in[51:45];   // mod 65
+    assign r_all[3] = {2'b0, residues_in[44:40]}; // mod 31
+    assign r_all[4] = {2'b0, residues_in[39:35]}; // mod 29
+    assign r_all[5] = {2'b0, residues_in[34:30]}; // mod 23
+    assign r_all[6] = {2'b0, residues_in[29:25]}; // mod 19
+    assign r_all[7] = {2'b0, residues_in[24:20]}; // mod 17
+    assign r_all[8] = {3'b0, residues_in[19:16]}; // mod 11
+
+    // ------------------------------------------------------------------
+    // 3. 内部信号
+    // ------------------------------------------------------------------
+    typedef enum logic [1:0] {S_IDLE, S_COMPUTE, S_COMPARE, S_DONE} state_t;
+    state_t state, next_state;
+    
+    reg [CNT_WIDTH-1:0] calc_idx;       // 计算计数器 (0-83)
+    reg [CNT_WIDTH-1:0] comp_idx;       // 比较计数器 (0-83)
+    
+    // 结果存储 (距离用 16-bit 足够)
+    reg [19:0] results_mem [0:NUM_COMBINATIONS-1];
+    reg [15:0] distances_mem [0:NUM_COMBINATIONS-1];
+    
+    // 动态参数选择信号
+    reg [19:0] cur_mi0, cur_mi1, cur_mi2;
+    reg [19:0] cur_inv0, cur_inv1, cur_inv2;
+    reg [19:0] cur_m_total;
+    reg [6:0]  cur_r_a, cur_r_b, cur_r_c;
+    reg [3:0]  idx_a, idx_b, idx_c;
+
+    // 计算结果临时寄存器
+    reg [19:0] calc_x;
+    reg [15:0] calc_dist;
+
+    // 最小值寄存器
+    reg [15:0] min_dist_reg;
+
+    // ------------------------------------------------------------------
+    // 4. 动态路由与参数查找表 (由 Python 脚本生成的 84 组数据)
+    // ------------------------------------------------------------------
+    always @(*) begin
+        // 默认值防止锁存器
+        {idx_a, idx_b, idx_c} = {0, 1, 2};
+        {cur_mi0, cur_mi1, cur_mi2} = {20'd0, 20'd0, 20'd0};
+        {cur_inv0, cur_inv1, cur_inv2} = {20'd0, 20'd0, 20'd0};
+        cur_m_total = 20'd0;
+
+    case (calc_idx)
+            0: begin // Indices: 0, 1, 2 (Mods: 64, 63, 65)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd1, 2'd2};
+                cur_mi0   = 20'd4095; cur_inv0 = 20'd63;
+                cur_mi1   = 20'd4160; cur_inv1 = 20'd32;
+                cur_mi2   = 20'd4032; cur_inv2 = 20'd33;
+                cur_m_total = 20'd262080;
+            end
+
+            1: begin // Indices: 0, 1, 3 (Mods: 64, 63, 31)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd1, 2'd3};
+                cur_mi0   = 20'd1953; cur_inv0 = 20'd33;
+                cur_mi1   = 20'd1984; cur_inv1 = 20'd61;
+                cur_mi2   = 20'd4032; cur_inv2 = 20'd16;
+                cur_m_total = 20'd124992;
+            end
+
+            2: begin // Indices: 0, 1, 4 (Mods: 64, 63, 29)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd1, 2'd4};
+                cur_mi0   = 20'd1827; cur_inv0 = 20'd11;
+                cur_mi1   = 20'd1856; cur_inv1 = 20'd50;
+                cur_mi2   = 20'd4032; cur_inv2 = 20'd1;
+                cur_m_total = 20'd116928;
+            end
+
+            3: begin // Indices: 0, 1, 5 (Mods: 64, 63, 23)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd1, 2'd5};
+                cur_mi0   = 20'd1449; cur_inv0 = 20'd25;
+                cur_mi1   = 20'd1472; cur_inv1 = 20'd11;
+                cur_mi2   = 20'd4032; cur_inv2 = 20'd10;
+                cur_m_total = 20'd92736;
+            end
+
+            4: begin // Indices: 0, 1, 6 (Mods: 64, 63, 19)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd1, 2'd6};
+                cur_mi0   = 20'd1197; cur_inv0 = 20'd37;
+                cur_mi1   = 20'd1216; cur_inv1 = 20'd10;
+                cur_mi2   = 20'd4032; cur_inv2 = 20'd5;
+                cur_m_total = 20'd76608;
+            end
+
+            5: begin // Indices: 0, 1, 7 (Mods: 64, 63, 17)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd1, 2'd7};
+                cur_mi0   = 20'd1071; cur_inv0 = 20'd15;
+                cur_mi1   = 20'd1088; cur_inv1 = 20'd26;
+                cur_mi2   = 20'd4032; cur_inv2 = 20'd6;
+                cur_m_total = 20'd68544;
+            end
+
+            6: begin // Indices: 0, 1, 8 (Mods: 64, 63, 11)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd1, 2'd8};
+                cur_mi0   = 20'd693; cur_inv0 = 20'd29;
+                cur_mi1   = 20'd704; cur_inv1 = 20'd23;
+                cur_mi2   = 20'd4032; cur_inv2 = 20'd2;
+                cur_m_total = 20'd44352;
+            end
+
+            7: begin // Indices: 0, 2, 3 (Mods: 64, 65, 31)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd2, 2'd3};
+                cur_mi0   = 20'd2015; cur_inv0 = 20'd31;
+                cur_mi1   = 20'd1984; cur_inv1 = 20'd44;
+                cur_mi2   = 20'd4160; cur_inv2 = 20'd26;
+                cur_m_total = 20'd128960;
+            end
+
+            8: begin // Indices: 0, 2, 4 (Mods: 64, 65, 29)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd2, 2'd4};
+                cur_mi0   = 20'd1885; cur_inv0 = 20'd53;
+                cur_mi1   = 20'd1856; cur_inv1 = 20'd56;
+                cur_mi2   = 20'd4160; cur_inv2 = 20'd9;
+                cur_m_total = 20'd120640;
+            end
+
+            9: begin // Indices: 0, 2, 5 (Mods: 64, 65, 23)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd2, 2'd5};
+                cur_mi0   = 20'd1495; cur_inv0 = 20'd39;
+                cur_mi1   = 20'd1472; cur_inv1 = 20'd48;
+                cur_mi2   = 20'd4160; cur_inv2 = 20'd15;
+                cur_m_total = 20'd95680;
+            end
+
+            10: begin // Indices: 0, 2, 6 (Mods: 64, 65, 19)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd2, 2'd6};
+                cur_mi0   = 20'd1235; cur_inv0 = 20'd27;
+                cur_mi1   = 20'd1216; cur_inv1 = 20'd41;
+                cur_mi2   = 20'd4160; cur_inv2 = 20'd18;
+                cur_m_total = 20'd79040;
+            end
+
+            11: begin // Indices: 0, 2, 7 (Mods: 64, 65, 17)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd2, 2'd7};
+                cur_mi0   = 20'd1105; cur_inv0 = 20'd49;
+                cur_mi1   = 20'd1088; cur_inv1 = 20'd42;
+                cur_mi2   = 20'd4160; cur_inv2 = 20'd10;
+                cur_m_total = 20'd70720;
+            end
+
+            12: begin // Indices: 0, 2, 8 (Mods: 64, 65, 11)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd2, 2'd8};
+                cur_mi0   = 20'd715; cur_inv0 = 20'd35;
+                cur_mi1   = 20'd704; cur_inv1 = 20'd59;
+                cur_mi2   = 20'd4160; cur_inv2 = 20'd6;
+                cur_m_total = 20'd45760;
+            end
+
+            13: begin // Indices: 0, 3, 4 (Mods: 64, 31, 29)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd3, 2'd4};
+                cur_mi0   = 20'd899; cur_inv0 = 20'd43;
+                cur_mi1   = 20'd1856; cur_inv1 = 20'd23;
+                cur_mi2   = 20'd1984; cur_inv2 = 20'd17;
+                cur_m_total = 20'd57536;
+            end
+
+            14: begin // Indices: 0, 3, 5 (Mods: 64, 31, 23)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd3, 2'd5};
+                cur_mi0   = 20'd713; cur_inv0 = 20'd57;
+                cur_mi1   = 20'd1472; cur_inv1 = 20'd29;
+                cur_mi2   = 20'd1984; cur_inv2 = 20'd4;
+                cur_m_total = 20'd45632;
+            end
+
+            15: begin // Indices: 0, 3, 6 (Mods: 64, 31, 19)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd3, 2'd6};
+                cur_mi0   = 20'd589; cur_inv0 = 20'd5;
+                cur_mi1   = 20'd1216; cur_inv1 = 20'd9;
+                cur_mi2   = 20'd1984; cur_inv2 = 20'd12;
+                cur_m_total = 20'd37696;
+            end
+
+            16: begin // Indices: 0, 3, 7 (Mods: 64, 31, 17)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd3, 2'd7};
+                cur_mi0   = 20'd527; cur_inv0 = 20'd47;
+                cur_mi1   = 20'd1088; cur_inv1 = 20'd21;
+                cur_mi2   = 20'd1984; cur_inv2 = 20'd10;
+                cur_m_total = 20'd33728;
+            end
+
+            17: begin // Indices: 0, 3, 8 (Mods: 64, 31, 11)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd3, 2'd8};
+                cur_mi0   = 20'd341; cur_inv0 = 20'd61;
+                cur_mi1   = 20'd704; cur_inv1 = 20'd24;
+                cur_mi2   = 20'd1984; cur_inv2 = 20'd3;
+                cur_m_total = 20'd21824;
+            end
+
+            18: begin // Indices: 0, 4, 5 (Mods: 64, 29, 23)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd4, 2'd5};
+                cur_mi0   = 20'd667; cur_inv0 = 20'd19;
+                cur_mi1   = 20'd1472; cur_inv1 = 20'd4;
+                cur_mi2   = 20'd1856; cur_inv2 = 20'd13;
+                cur_m_total = 20'd42688;
+            end
+
+            19: begin // Indices: 0, 4, 6 (Mods: 64, 29, 19)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd4, 2'd6};
+                cur_mi0   = 20'd551; cur_inv0 = 20'd23;
+                cur_mi1   = 20'd1216; cur_inv1 = 20'd14;
+                cur_mi2   = 20'd1856; cur_inv2 = 20'd3;
+                cur_m_total = 20'd35264;
+            end
+
+            20: begin // Indices: 0, 4, 7 (Mods: 64, 29, 17)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd4, 2'd7};
+                cur_mi0   = 20'd493; cur_inv0 = 20'd37;
+                cur_mi1   = 20'd1088; cur_inv1 = 20'd2;
+                cur_mi2   = 20'd1856; cur_inv2 = 20'd6;
+                cur_m_total = 20'd31552;
+            end
+
+            21: begin // Indices: 0, 4, 8 (Mods: 64, 29, 11)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd4, 2'd8};
+                cur_mi0   = 20'd319; cur_inv0 = 20'd63;
+                cur_mi1   = 20'd704; cur_inv1 = 20'd11;
+                cur_mi2   = 20'd1856; cur_inv2 = 20'd7;
+                cur_m_total = 20'd20416;
+            end
+
+            22: begin // Indices: 0, 5, 6 (Mods: 64, 23, 19)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd5, 2'd6};
+                cur_mi0   = 20'd437; cur_inv0 = 20'd29;
+                cur_mi1   = 20'd1216; cur_inv1 = 20'd15;
+                cur_mi2   = 20'd1472; cur_inv2 = 20'd17;
+                cur_m_total = 20'd27968;
+            end
+
+            23: begin // Indices: 0, 5, 7 (Mods: 64, 23, 17)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd5, 2'd7};
+                cur_mi0   = 20'd391; cur_inv0 = 20'd55;
+                cur_mi1   = 20'd1088; cur_inv1 = 20'd10;
+                cur_mi2   = 20'd1472; cur_inv2 = 20'd12;
+                cur_m_total = 20'd25024;
+            end
+
+            24: begin // Indices: 0, 5, 8 (Mods: 64, 23, 11)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd5, 2'd8};
+                cur_mi0   = 20'd253; cur_inv0 = 20'd21;
+                cur_mi1   = 20'd704; cur_inv1 = 20'd5;
+                cur_mi2   = 20'd1472; cur_inv2 = 20'd5;
+                cur_m_total = 20'd16192;
+            end
+
+            25: begin // Indices: 0, 6, 7 (Mods: 64, 19, 17)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd6, 2'd7};
+                cur_mi0   = 20'd323; cur_inv0 = 20'd43;
+                cur_mi1   = 20'd1088; cur_inv1 = 20'd4;
+                cur_mi2   = 20'd1216; cur_inv2 = 20'd2;
+                cur_m_total = 20'd20672;
+            end
+
+            26: begin // Indices: 0, 6, 8 (Mods: 64, 19, 11)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd6, 2'd8};
+                cur_mi0   = 20'd209; cur_inv0 = 20'd49;
+                cur_mi1   = 20'd704; cur_inv1 = 20'd1;
+                cur_mi2   = 20'd1216; cur_inv2 = 20'd2;
+                cur_m_total = 20'd13376;
+            end
+
+            27: begin // Indices: 0, 7, 8 (Mods: 64, 17, 11)
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd7, 2'd8};
+                cur_mi0   = 20'd187; cur_inv0 = 20'd51;
+                cur_mi1   = 20'd704; cur_inv1 = 20'd5;
+                cur_mi2   = 20'd1088; cur_inv2 = 20'd10;
+                cur_m_total = 20'd11968;
+            end
+
+            28: begin // Indices: 1, 2, 3 (Mods: 63, 65, 31)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd2, 2'd3};
+                cur_mi0   = 20'd2015; cur_inv0 = 20'd62;
+                cur_mi1   = 20'd1953; cur_inv1 = 20'd22;
+                cur_mi2   = 20'd4095; cur_inv2 = 20'd21;
+                cur_m_total = 20'd126945;
+            end
+
+            29: begin // Indices: 1, 2, 4 (Mods: 63, 65, 29)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd2, 2'd4};
+                cur_mi0   = 20'd1885; cur_inv0 = 20'd25;
+                cur_mi1   = 20'd1827; cur_inv1 = 20'd28;
+                cur_mi2   = 20'd4095; cur_inv2 = 20'd5;
+                cur_m_total = 20'd118755;
+            end
+
+            30: begin // Indices: 1, 2, 5 (Mods: 63, 65, 23)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd2, 2'd5};
+                cur_mi0   = 20'd1495; cur_inv0 = 20'd37;
+                cur_mi1   = 20'd1449; cur_inv1 = 20'd24;
+                cur_mi2   = 20'd4095; cur_inv2 = 20'd1;
+                cur_m_total = 20'd94185;
+            end
+
+            31: begin // Indices: 1, 2, 6 (Mods: 63, 65, 19)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd2, 2'd6};
+                cur_mi0   = 20'd1235; cur_inv0 = 20'd5;
+                cur_mi1   = 20'd1197; cur_inv1 = 20'd53;
+                cur_mi2   = 20'd4095; cur_inv2 = 20'd2;
+                cur_m_total = 20'd77805;
+            end
+
+            32: begin // Indices: 1, 2, 7 (Mods: 63, 65, 17)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd2, 2'd7};
+                cur_mi0   = 20'd1105; cur_inv0 = 20'd13;
+                cur_mi1   = 20'd1071; cur_inv1 = 20'd21;
+                cur_mi2   = 20'd4095; cur_inv2 = 20'd8;
+                cur_m_total = 20'd69615;
+            end
+
+            33: begin // Indices: 1, 2, 8 (Mods: 63, 65, 11)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd2, 2'd8};
+                cur_mi0   = 20'd715; cur_inv0 = 20'd43;
+                cur_mi1   = 20'd693; cur_inv1 = 20'd62;
+                cur_mi2   = 20'd4095; cur_inv2 = 20'd4;
+                cur_m_total = 20'd45045;
+            end
+
+            34: begin // Indices: 1, 3, 4 (Mods: 63, 31, 29)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd3, 2'd4};
+                cur_mi0   = 20'd899; cur_inv0 = 20'd26;
+                cur_mi1   = 20'd1827; cur_inv1 = 20'd15;
+                cur_mi2   = 20'd1953; cur_inv2 = 20'd3;
+                cur_m_total = 20'd56637;
+            end
+
+            35: begin // Indices: 1, 3, 5 (Mods: 63, 31, 23)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd3, 2'd5};
+                cur_mi0   = 20'd713; cur_inv0 = 20'd41;
+                cur_mi1   = 20'd1449; cur_inv1 = 20'd27;
+                cur_mi2   = 20'd1953; cur_inv2 = 20'd11;
+                cur_m_total = 20'd44919;
+            end
+
+            36: begin // Indices: 1, 3, 6 (Mods: 63, 31, 19)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd3, 2'd6};
+                cur_mi0   = 20'd589; cur_inv0 = 20'd43;
+                cur_mi1   = 20'd1197; cur_inv1 = 20'd18;
+                cur_mi2   = 20'd1953; cur_inv2 = 20'd14;
+                cur_m_total = 20'd37107;
+            end
+
+            37: begin // Indices: 1, 3, 7 (Mods: 63, 31, 17)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd3, 2'd7};
+                cur_mi0   = 20'd527; cur_inv0 = 20'd11;
+                cur_mi1   = 20'd1071; cur_inv1 = 20'd11;
+                cur_mi2   = 20'd1953; cur_inv2 = 20'd8;
+                cur_m_total = 20'd33201;
+            end
+
+            38: begin // Indices: 1, 3, 8 (Mods: 63, 31, 11)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd3, 2'd8};
+                cur_mi0   = 20'd341; cur_inv0 = 20'd17;
+                cur_mi1   = 20'd693; cur_inv1 = 20'd17;
+                cur_mi2   = 20'd1953; cur_inv2 = 20'd2;
+                cur_m_total = 20'd21483;
+            end
+
+            39: begin // Indices: 1, 4, 5 (Mods: 63, 29, 23)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd4, 2'd5};
+                cur_mi0   = 20'd667; cur_inv0 = 20'd46;
+                cur_mi1   = 20'd1449; cur_inv1 = 20'd28;
+                cur_mi2   = 20'd1827; cur_inv2 = 20'd7;
+                cur_m_total = 20'd42021;
+            end
+
+            40: begin // Indices: 1, 4, 6 (Mods: 63, 29, 19)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd4, 2'd6};
+                cur_mi0   = 20'd551; cur_inv0 = 20'd59;
+                cur_mi1   = 20'd1197; cur_inv1 = 20'd11;
+                cur_mi2   = 20'd1827; cur_inv2 = 20'd13;
+                cur_m_total = 20'd34713;
+            end
+
+            41: begin // Indices: 1, 4, 7 (Mods: 63, 29, 17)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd4, 2'd7};
+                cur_mi0   = 20'd493; cur_inv0 = 20'd40;
+                cur_mi1   = 20'd1071; cur_inv1 = 20'd14;
+                cur_mi2   = 20'd1827; cur_inv2 = 20'd15;
+                cur_m_total = 20'd31059;
+            end
+
+            42: begin // Indices: 1, 4, 8 (Mods: 63, 29, 11)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd4, 2'd8};
+                cur_mi0   = 20'd319; cur_inv0 = 20'd16;
+                cur_mi1   = 20'd693; cur_inv1 = 20'd19;
+                cur_mi2   = 20'd1827; cur_inv2 = 20'd1;
+                cur_m_total = 20'd20097;
+            end
+
+            43: begin // Indices: 1, 5, 6 (Mods: 63, 23, 19)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd5, 2'd6};
+                cur_mi0   = 20'd437; cur_inv0 = 20'd47;
+                cur_mi1   = 20'd1197; cur_inv1 = 20'd1;
+                cur_mi2   = 20'd1449; cur_inv2 = 20'd4;
+                cur_m_total = 20'd27531;
+            end
+
+            44: begin // Indices: 1, 5, 7 (Mods: 63, 23, 17)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd5, 2'd7};
+                cur_mi0   = 20'd391; cur_inv0 = 20'd34;
+                cur_mi1   = 20'd1071; cur_inv1 = 20'd16;
+                cur_mi2   = 20'd1449; cur_inv2 = 20'd13;
+                cur_m_total = 20'd24633;
+            end
+
+            45: begin // Indices: 1, 5, 8 (Mods: 63, 23, 11)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd5, 2'd8};
+                cur_mi0   = 20'd253; cur_inv0 = 20'd1;
+                cur_mi1   = 20'd693; cur_inv1 = 20'd8;
+                cur_mi2   = 20'd1449; cur_inv2 = 20'd7;
+                cur_m_total = 20'd15939;
+            end
+
+            46: begin // Indices: 1, 6, 7 (Mods: 63, 19, 17)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd6, 2'd7};
+                cur_mi0   = 20'd323; cur_inv0 = 20'd8;
+                cur_mi1   = 20'd1071; cur_inv1 = 20'd11;
+                cur_mi2   = 20'd1197; cur_inv2 = 20'd5;
+                cur_m_total = 20'd20349;
+            end
+
+            47: begin // Indices: 1, 6, 8 (Mods: 63, 19, 11)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd6, 2'd8};
+                cur_mi0   = 20'd209; cur_inv0 = 20'd41;
+                cur_mi1   = 20'd693; cur_inv1 = 20'd17;
+                cur_mi2   = 20'd1197; cur_inv2 = 20'd5;
+                cur_m_total = 20'd13167;
+            end
+
+            48: begin // Indices: 1, 7, 8 (Mods: 63, 17, 11)
+                {idx_a, idx_b, idx_c} = {2'd1, 2'd7, 2'd8};
+                cur_mi0   = 20'd187; cur_inv0 = 20'd31;
+                cur_mi1   = 20'd693; cur_inv1 = 20'd4;
+                cur_mi2   = 20'd1071; cur_inv2 = 20'd3;
+                cur_m_total = 20'd11781;
+            end
+
+            49: begin // Indices: 2, 3, 4 (Mods: 65, 31, 29)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd3, 2'd4};
+                cur_mi0   = 20'd899; cur_inv0 = 20'd59;
+                cur_mi1   = 20'd1885; cur_inv1 = 20'd5;
+                cur_mi2   = 20'd2015; cur_inv2 = 20'd27;
+                cur_m_total = 20'd58435;
+            end
+
+            50: begin // Indices: 2, 3, 5 (Mods: 65, 31, 23)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd3, 2'd5};
+                cur_mi0   = 20'd713; cur_inv0 = 20'd32;
+                cur_mi1   = 20'd1495; cur_inv1 = 20'd9;
+                cur_mi2   = 20'd2015; cur_inv2 = 20'd5;
+                cur_m_total = 20'd46345;
+            end
+
+            51: begin // Indices: 2, 3, 6 (Mods: 65, 31, 19)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd3, 2'd6};
+                cur_mi0   = 20'd589; cur_inv0 = 20'd49;
+                cur_mi1   = 20'd1235; cur_inv1 = 20'd6;
+                cur_mi2   = 20'd2015; cur_inv2 = 20'd1;
+                cur_m_total = 20'd38285;
+            end
+
+            52: begin // Indices: 2, 3, 7 (Mods: 65, 31, 17)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd3, 2'd7};
+                cur_mi0   = 20'd527; cur_inv0 = 20'd28;
+                cur_mi1   = 20'd1105; cur_inv1 = 20'd14;
+                cur_mi2   = 20'd2015; cur_inv2 = 20'd2;
+                cur_m_total = 20'd34255;
+            end
+
+            53: begin // Indices: 2, 3, 8 (Mods: 65, 31, 11)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd3, 2'd8};
+                cur_mi0   = 20'd341; cur_inv0 = 20'd61;
+                cur_mi1   = 20'd715; cur_inv1 = 20'd16;
+                cur_mi2   = 20'd2015; cur_inv2 = 20'd6;
+                cur_m_total = 20'd22165;
+            end
+
+            54: begin // Indices: 2, 4, 5 (Mods: 65, 29, 23)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd4, 2'd5};
+                cur_mi0   = 20'd667; cur_inv0 = 20'd23;
+                cur_mi1   = 20'd1495; cur_inv1 = 20'd20;
+                cur_mi2   = 20'd1885; cur_inv2 = 20'd22;
+                cur_m_total = 20'd43355;
+            end
+
+            55: begin // Indices: 2, 4, 6 (Mods: 65, 29, 19)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd4, 2'd6};
+                cur_mi0   = 20'd551; cur_inv0 = 20'd21;
+                cur_mi1   = 20'd1235; cur_inv1 = 20'd12;
+                cur_mi2   = 20'd1885; cur_inv2 = 20'd5;
+                cur_m_total = 20'd35815;
+            end
+
+            56: begin // Indices: 2, 4, 7 (Mods: 65, 29, 17)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd4, 2'd7};
+                cur_mi0   = 20'd493; cur_inv0 = 20'd12;
+                cur_mi1   = 20'd1105; cur_inv1 = 20'd10;
+                cur_mi2   = 20'd1885; cur_inv2 = 20'd8;
+                cur_m_total = 20'd32045;
+            end
+
+            57: begin // Indices: 2, 4, 8 (Mods: 65, 29, 11)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd4, 2'd8};
+                cur_mi0   = 20'd319; cur_inv0 = 20'd54;
+                cur_mi1   = 20'd715; cur_inv1 = 20'd26;
+                cur_mi2   = 20'd1885; cur_inv2 = 20'd3;
+                cur_m_total = 20'd20735;
+            end
+
+            58: begin // Indices: 2, 5, 6 (Mods: 65, 23, 19)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd5, 2'd6};
+                cur_mi0   = 20'd437; cur_inv0 = 20'd18;
+                cur_mi1   = 20'd1235; cur_inv1 = 20'd13;
+                cur_mi2   = 20'd1495; cur_inv2 = 20'd3;
+                cur_m_total = 20'd28405;
+            end
+
+            59: begin // Indices: 2, 5, 7 (Mods: 65, 23, 17)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd5, 2'd7};
+                cur_mi0   = 20'd391; cur_inv0 = 20'd1;
+                cur_mi1   = 20'd1105; cur_inv1 = 20'd1;
+                cur_mi2   = 20'd1495; cur_inv2 = 20'd16;
+                cur_m_total = 20'd25415;
+            end
+
+            60: begin // Indices: 2, 5, 8 (Mods: 65, 23, 11)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd5, 2'd8};
+                cur_mi0   = 20'd253; cur_inv0 = 20'd37;
+                cur_mi1   = 20'd715; cur_inv1 = 20'd12;
+                cur_mi2   = 20'd1495; cur_inv2 = 20'd10;
+                cur_m_total = 20'd16445;
+            end
+
+            61: begin // Indices: 2, 6, 7 (Mods: 65, 19, 17)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd6, 2'd7};
+                cur_mi0   = 20'd323; cur_inv0 = 20'd32;
+                cur_mi1   = 20'd1105; cur_inv1 = 20'd13;
+                cur_mi2   = 20'd1235; cur_inv2 = 20'd14;
+                cur_m_total = 20'd20995;
+            end
+
+            62: begin // Indices: 2, 6, 8 (Mods: 65, 19, 11)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd6, 2'd8};
+                cur_mi0   = 20'd209; cur_inv0 = 20'd14;
+                cur_mi1   = 20'd715; cur_inv1 = 20'd8;
+                cur_mi2   = 20'd1235; cur_inv2 = 20'd4;
+                cur_m_total = 20'd13585;
+            end
+
+            63: begin // Indices: 2, 7, 8 (Mods: 65, 17, 11)
+                {idx_a, idx_b, idx_c} = {2'd2, 2'd7, 2'd8};
+                cur_mi0   = 20'd187; cur_inv0 = 20'd8;
+                cur_mi1   = 20'd715; cur_inv1 = 20'd1;
+                cur_mi2   = 20'd1105; cur_inv2 = 20'd9;
+                cur_m_total = 20'd12155;
+            end
+
+            64: begin // Indices: 3, 4, 5 (Mods: 31, 29, 23)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd4, 2'd5};
+                cur_mi0   = 20'd667; cur_inv0 = 20'd2;
+                cur_mi1   = 20'd713; cur_inv1 = 20'd12;
+                cur_mi2   = 20'd899; cur_inv2 = 20'd12;
+                cur_m_total = 20'd20677;
+            end
+
+            65: begin // Indices: 3, 4, 6 (Mods: 31, 29, 19)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd4, 2'd6};
+                cur_mi0   = 20'd551; cur_inv0 = 20'd22;
+                cur_mi1   = 20'd589; cur_inv1 = 20'd13;
+                cur_mi2   = 20'd899; cur_inv2 = 20'd16;
+                cur_m_total = 20'd17081;
+            end
+
+            66: begin // Indices: 3, 4, 7 (Mods: 31, 29, 17)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd4, 2'd7};
+                cur_mi0   = 20'd493; cur_inv0 = 20'd10;
+                cur_mi1   = 20'd527; cur_inv1 = 20'd6;
+                cur_mi2   = 20'd899; cur_inv2 = 20'd8;
+                cur_m_total = 20'd15283;
+            end
+
+            67: begin // Indices: 3, 4, 8 (Mods: 31, 29, 11)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd4, 2'd8};
+                cur_mi0   = 20'd319; cur_inv0 = 20'd7;
+                cur_mi1   = 20'd341; cur_inv1 = 20'd4;
+                cur_mi2   = 20'd899; cur_inv2 = 20'd7;
+                cur_m_total = 20'd9889;
+            end
+
+            68: begin // Indices: 3, 5, 6 (Mods: 31, 23, 19)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd5, 2'd6};
+                cur_mi0   = 20'd437; cur_inv0 = 20'd21;
+                cur_mi1   = 20'd589; cur_inv1 = 20'd5;
+                cur_mi2   = 20'd713; cur_inv2 = 20'd2;
+                cur_m_total = 20'd13547;
+            end
+
+            69: begin // Indices: 3, 5, 7 (Mods: 31, 23, 17)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd5, 2'd7};
+                cur_mi0   = 20'd391; cur_inv0 = 20'd18;
+                cur_mi1   = 20'd527; cur_inv1 = 20'd11;
+                cur_mi2   = 20'd713; cur_inv2 = 20'd16;
+                cur_m_total = 20'd12121;
+            end
+
+            70: begin // Indices: 3, 5, 8 (Mods: 31, 23, 11)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd5, 2'd8};
+                cur_mi0   = 20'd253; cur_inv0 = 20'd25;
+                cur_mi1   = 20'd341; cur_inv1 = 20'd17;
+                cur_mi2   = 20'd713; cur_inv2 = 20'd5;
+                cur_m_total = 20'd7843;
+            end
+
+            71: begin // Indices: 3, 6, 7 (Mods: 31, 19, 17)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd6, 2'd7};
+                cur_mi0   = 20'd323; cur_inv0 = 20'd12;
+                cur_mi1   = 20'd527; cur_inv1 = 20'd15;
+                cur_mi2   = 20'd589; cur_inv2 = 20'd14;
+                cur_m_total = 20'd10013;
+            end
+
+            72: begin // Indices: 3, 6, 8 (Mods: 31, 19, 11)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd6, 2'd8};
+                cur_mi0   = 20'd209; cur_inv0 = 20'd27;
+                cur_mi1   = 20'd341; cur_inv1 = 20'd18;
+                cur_mi2   = 20'd589; cur_inv2 = 20'd2;
+                cur_m_total = 20'd6479;
+            end
+
+            73: begin // Indices: 3, 7, 8 (Mods: 31, 17, 11)
+                {idx_a, idx_b, idx_c} = {2'd3, 2'd7, 2'd8};
+                cur_mi0   = 20'd187; cur_inv0 = 20'd1;
+                cur_mi1   = 20'd341; cur_inv1 = 20'd1;
+                cur_mi2   = 20'd527; cur_inv2 = 20'd10;
+                cur_m_total = 20'd5797;
+            end
+
+            74: begin // Indices: 4, 5, 6 (Mods: 29, 23, 19)
+                {idx_a, idx_b, idx_c} = {2'd4, 2'd5, 2'd6};
+                cur_mi0   = 20'd437; cur_inv0 = 20'd15;
+                cur_mi1   = 20'd551; cur_inv1 = 20'd22;
+                cur_mi2   = 20'd667; cur_inv2 = 20'd10;
+                cur_m_total = 20'd12673;
+            end
+
+            75: begin // Indices: 4, 5, 7 (Mods: 29, 23, 17)
+                {idx_a, idx_b, idx_c} = {2'd4, 2'd5, 2'd7};
+                cur_mi0   = 20'd391; cur_inv0 = 20'd27;
+                cur_mi1   = 20'd493; cur_inv1 = 20'd7;
+                cur_mi2   = 20'd667; cur_inv2 = 20'd13;
+                cur_m_total = 20'd11339;
+            end
+
+            76: begin // Indices: 4, 5, 8 (Mods: 29, 23, 11)
+                {idx_a, idx_b, idx_c} = {2'd4, 2'd5, 2'd8};
+                cur_mi0   = 20'd253; cur_inv0 = 20'd18;
+                cur_mi1   = 20'd319; cur_inv1 = 20'd15;
+                cur_mi2   = 20'd667; cur_inv2 = 20'd8;
+                cur_m_total = 20'd7337;
+            end
+
+            77: begin // Indices: 4, 6, 7 (Mods: 29, 19, 17)
+                {idx_a, idx_b, idx_c} = {2'd4, 2'd6, 2'd7};
+                cur_mi0   = 20'd323; cur_inv0 = 20'd22;
+                cur_mi1   = 20'd493; cur_inv1 = 20'd18;
+                cur_mi2   = 20'd551; cur_inv2 = 20'd5;
+                cur_m_total = 20'd9367;
+            end
+
+            78: begin // Indices: 4, 6, 8 (Mods: 29, 19, 11)
+                {idx_a, idx_b, idx_c} = {2'd4, 2'd6, 2'd8};
+                cur_mi0   = 20'd209; cur_inv0 = 20'd5;
+                cur_mi1   = 20'd319; cur_inv1 = 20'd14;
+                cur_mi2   = 20'd551; cur_inv2 = 20'd1;
+                cur_m_total = 20'd6061;
+            end
+
+            79: begin // Indices: 4, 7, 8 (Mods: 29, 17, 11)
+                {idx_a, idx_b, idx_c} = {2'd4, 2'd7, 2'd8};
+                cur_mi0   = 20'd187; cur_inv0 = 20'd9;
+                cur_mi1   = 20'd319; cur_inv1 = 20'd4;
+                cur_mi2   = 20'd493; cur_inv2 = 20'd5;
+                cur_m_total = 20'd5423;
+            end
+
+            80: begin // Indices: 5, 6, 7 (Mods: 23, 19, 17)
+                {idx_a, idx_b, idx_c} = {2'd5, 2'd6, 2'd7};
+                cur_mi0   = 20'd323; cur_inv0 = 20'd1;
+                cur_mi1   = 20'd391; cur_inv1 = 20'd7;
+                cur_mi2   = 20'd437; cur_inv2 = 20'd10;
+                cur_m_total = 20'd7429;
+            end
+
+            81: begin // Indices: 5, 6, 8 (Mods: 23, 19, 11)
+                {idx_a, idx_b, idx_c} = {2'd5, 2'd6, 2'd8};
+                cur_mi0   = 20'd209; cur_inv0 = 20'd12;
+                cur_mi1   = 20'd253; cur_inv1 = 20'd16;
+                cur_mi2   = 20'd437; cur_inv2 = 20'd7;
+                cur_m_total = 20'd4807;
+            end
+
+            82: begin // Indices: 5, 7, 8 (Mods: 23, 17, 11)
+                {idx_a, idx_b, idx_c} = {2'd5, 2'd7, 2'd8};
+                cur_mi0   = 20'd187; cur_inv0 = 20'd8;
+                cur_mi1   = 20'd253; cur_inv1 = 20'd8;
+                cur_mi2   = 20'd391; cur_inv2 = 20'd2;
+                cur_m_total = 20'd4301;
+            end
+
+            83: begin // Indices: 6, 7, 8 (Mods: 19, 17, 11)
+                {idx_a, idx_b, idx_c} = {2'd6, 2'd7, 2'd8};
+                cur_mi0   = 20'd187; cur_inv0 = 20'd6;
+                cur_mi1   = 20'd209; cur_inv1 = 20'd7;
+                cur_mi2   = 20'd323; cur_inv2 = 20'd3;
+                cur_m_total = 20'd3553;
+            end
+            default: begin
+                {idx_a, idx_b, idx_c} = {2'd0, 2'd1, 2'd2};
+                cur_mi0 = 20'd4095; cur_inv0 = 20'd63;
+                cur_mi1 = 20'd4160; cur_inv1 = 20'd2;
+                cur_mi2 = 20'd4032; cur_inv2 = 20'd33;
+                cur_m_total = 20'd262080;
+            end
+        endcase
+        
+        cur_r_a = r_all[idx_a];
+        cur_r_b = r_all[idx_b];
+        cur_r_c = r_all[idx_c];
+    end
+    
+
+
+    // ------------------------------------------------------------------
+    // 5. 核心计算逻辑 (CRT 重构 + MLD 距离计算)
+    // ------------------------------------------------------------------
+    always @(*) begin
+        logic [39:0] sum_temp;
+        logic [19:0] x_temp;
+        logic [3:0]  dist_temp; // 距离定义为不匹配的个数 (0-9)，4-bit 足够
+        integer      k;             // 移到这里
+        logic [6:0]  expected_r;    // 移到这里
+
+        // 1. CRT 求和重构 X
+        sum_temp = ({20'd0, cur_r_a} * cur_mi0 * cur_inv0) +
+                   ({20'd0, cur_r_b} * cur_mi1 * cur_inv1) +
+                   ({20'd0, cur_r_c} * cur_mi2 * cur_inv2);
+        
+        x_temp = sum_temp % cur_m_total; 
+        
+        // 2. 【MLD 核心】重计算余数并比较 (Re-calculation & Comparison)
+        // 我们不需要真的做 9 次除法，只需要对当前用到的 3 个模数做取模验证即可？
+        // 不，论文说要对比 "chosen moduli" (所有 9 个)。
+        // 但为了节省资源，我们可以只对比那 3 个吗？
+        // 不行，因为那 3 个是用来生成 X 的，必然匹配 (距离为 0)。
+        // 关键在于对比那些 **没用到的 6 个冗余模数**！
+        // 如果 X 是正确的，它模剩下的 6 个模数，结果应该等于输入的对应余数。
+        
+        // 优化策略：只计算未使用的 6 个模数的余数并比较
+        // 这里为了代码简洁且通用，我们直接硬编码比较逻辑
+        // 假设 idx_a, idx_b, idx_c 是当前使用的三个索引
+        
+        dist_temp = 4'd0; // 初始化为 0 (表示当前这 3 个肯定匹配)
+        
+        // 遍历所有 9 个模数索引
+        for (integer k = 0; k < 9; k = k + 1) begin
+            // 跳过当前正在使用的 3 个模数 (因为它们必然匹配)
+            if ((k == idx_a) || (k == idx_b) || (k == idx_c)) 
+                continue;
+            
+            // 计算 X_temp 模第 k 个模数的理论余数
+            // 注意：这里需要做除法/取模运算，综合器会生成除法器
+            // 模数列表：64, 63, 65, 31, 29, 23, 19, 17, 11
+            case (k)
+                0: expected_r = x_temp % 7'd64;
+                1: expected_r = x_temp % 7'd63;
+                2: expected_r = x_temp % 7'd65;
+                3: expected_r = x_temp % 7'd31;
+                4: expected_r = x_temp % 7'd29;
+                5: expected_r = x_temp % 7'd23;
+                6: expected_r = x_temp % 7'd19;
+                7: expected_r = x_temp % 7'd17;
+                8: expected_r = x_temp % 7'd11;
+                default: expected_r = 7'd0;
+            endcase
+            
+            // 比较理论余数和实际输入余数
+            if (expected_r != r_all[k]) begin
+                dist_temp = dist_temp + 1'b1; // 不匹配，距离 +1
             end
         end
+
+        calc_x    = x_temp;
+        calc_dist = {12'd0, dist_temp}; // 扩展到 16-bit 以匹配内存定义
     end
 
-    // --- Output Register ---
-    always_ff @(posedge clk or negedge rst_n) begin
+    // ------------------------------------------------------------------
+    // 6. 状态机控制
+    // ------------------------------------------------------------------
+    always @(*) begin
+        next_state = state;
+        case (state)
+            S_IDLE: if (start) next_state = S_COMPUTE;
+            S_COMPUTE: if (calc_idx == NUM_COMBINATIONS - 1) next_state = S_COMPARE;
+            S_COMPARE: if (comp_idx == NUM_COMBINATIONS - 1) next_state = S_DONE;
+            S_DONE: next_state = S_IDLE;
+            default: next_state = S_IDLE;
+        endcase
+    end
+
+    // ------------------------------------------------------------------
+    // 7. 时序逻辑 (包含复位初始化和最终可信度判断)
+    // ------------------------------------------------------------------
+    always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            data_out      <= 20'd0;
-            valid         <= 1'b0;
-            uncorrectable <= 1'b0;
-        end else if (start) begin
-            data_out      <= chan_x[min_idx];
-            valid         <= 1'b1;
-            uncorrectable <= (min_dist > 16'd100);
+            // --- 复位逻辑在这里 ---
+            state <= S_IDLE;
+            calc_idx <= 0;
+            comp_idx <= 0;
+            valid <= 0;
+            data_out <= 0;
+            uncorrectable <= 1;       // 复位时默认不可纠错
+            min_dist_reg <= 16'd10;   // 初始化为一个较大的值 (大于最大可能距离 6)
+        end else begin
+            valid <= 0; // 默认拉低 valid
+            
+            case (state)
+                S_IDLE: begin
+                    if (start) begin
+                        calc_idx <= 0;
+                        comp_idx <= 0;
+                        uncorrectable <= 1; // 新一轮开始，先标记为不可信
+                        min_dist_reg <= 16'd10; // 重置最小距离为大值
+                    end
+                end
+                
+                S_COMPUTE: begin
+                    results_mem[calc_idx] <= calc_x;
+                    distances_mem[calc_idx] <= calc_dist;
+                    if (calc_idx < NUM_COMBINATIONS - 1) 
+                        calc_idx <= calc_idx + 1;
+                end
+                
+                S_COMPARE: begin
+                    // 策略：寻找最小距离
+                    // 注意：因为我们在 S_IDLE 已经把 min_dist_reg 初始化为 10 了
+                    // 所以这里可以直接比较，不需要判断 comp_idx == 0
+                    
+                    if (distances_mem[comp_idx] < min_dist_reg) begin
+                        min_dist_reg <= distances_mem[comp_idx];
+                        data_out <= results_mem[comp_idx];
+                    end
+                    
+                    if (comp_idx < NUM_COMBINATIONS - 1) 
+                        comp_idx <= comp_idx + 1;
+                end
+                
+                S_DONE: begin
+                    valid <= 1;
+                    // --- 关键修改：最终可信度判断 ---
+                    // 如果找到的最小距离仍然很大 (比如 > 2)，说明没有可靠的组合
+                    // 对于 3NRM，通常距离为 0 或 1 是可接受的
+                    if (min_dist_reg > 16'd2) 
+                        uncorrectable <= 1;
+                    else 
+                        uncorrectable <= 0;
+                end
+            endcase
         end
     end
-
-endmodule
+    endmodule
