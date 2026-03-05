@@ -12,7 +12,8 @@ module uart_tx(
     parameter CLK_FREQ  = 100_000_000;
     parameter BAUD_RATE = 9600;
     // 100,000,000 / 9600 = 10416.66 -> 取 10416 或 10417 均可，误差极小
-    localparam CNT_MAX = 10416; 
+    localparam CNT_MAX = 10416; //适配100MHz
+    // localparam CNT_MAX = 520;  // 适配 5MHz 时钟 @ 9600bps
 
     reg [15:0] cnt;
     reg [3:0] bit_idx; // 0-7: 数据位，8: 停止位

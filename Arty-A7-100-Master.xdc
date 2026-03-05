@@ -5,7 +5,7 @@
 
 ## Clock signal
 set_property -dict { PACKAGE_PIN E3    IOSTANDARD LVCMOS33 } [get_ports { clk }]; #IO_L12P_T1_MRCC_35 Sch=gclk[100]
-create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports { clk }];
+create_clock -add -name sys_clk_pin -period 200.00 -waveform {0 5} [get_ports { clk }];
 
 ## Switches
 set_property -dict { PACKAGE_PIN A8    IOSTANDARD LVCMOS33 } [get_ports { sw[0] }]; #IO_L12N_T1_MRCC_16 Sch=sw[0]
@@ -83,11 +83,11 @@ set_property -dict { PACKAGE_PIN B8    IOSTANDARD LVCMOS33 } [get_ports { btn[3]
 #set_property -dict { PACKAGE_PIN D10   IOSTANDARD LVCMOS33 } [get_ports { uart_rx_pin }]; #IO_L19N_T3_VREF_16 Sch=uart_rxd_out
 #set_property -dict { PACKAGE_PIN A9    IOSTANDARD LVCMOS33 } [get_ports { uart_tx_pin  }]; #IO_L14N_T2_SRCC_16 Sch=uart_txd_in
 
-## USB-UART Interface (ÐÞÕý°æ - FPGA ÊÓ½Ç)
-## FPGA TX (·¢ËÍ) -> Á¬½Óµ½ FTDI RX (D10)
+## USB-UART Interface (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ - FPGA ï¿½Ó½ï¿½)
+## FPGA TX (ï¿½ï¿½ï¿½ï¿½) -> ï¿½ï¿½ï¿½Óµï¿½ FTDI RX (D10)
 set_property -dict { PACKAGE_PIN D10 IOSTANDARD LVCMOS33 } [get_ports { uart_tx_pin }]
 
-## FPGA RX (½ÓÊÕ) -> Á¬½Óµ½ FTDI TX (A9)
+## FPGA RX (ï¿½ï¿½ï¿½ï¿½) -> ï¿½ï¿½ï¿½Óµï¿½ FTDI TX (A9)
 set_property -dict { PACKAGE_PIN A9  IOSTANDARD LVCMOS33 } [get_ports { uart_rx_pin }]
 
 ## ChipKit Outer Digital Header

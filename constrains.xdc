@@ -21,9 +21,9 @@ set_property -dict { PACKAGE_PIN J5 IOSTANDARD LVCMOS33 } [get_ports { led_fail 
 ## 4. UART TX
 ## 对应代码端口: uart_tx (即 uart_tx.u_uart_tx_inst.uart_tx_pin)
 ## Pin D10 是 FPGA TX -> 电脑 USB-UART RX
-set_property -dict { PACKAGE_PIN D10 IOSTANDARD LVCMOS33 } [get_ports { uart_tx }]
+set_property -dict { PACKAGE_PIN D10 IOSTANDARD LVCMOS33 } [get_ports { uart_tx_pin }]
 ## UART RX
-set_property -dict { PACKAGE_PIN A9 IOSTANDARD LVCMOS33 } [get_ports { uart_rx }]
+set_property -dict { PACKAGE_PIN A9 IOSTANDARD LVCMOS33 } [get_ports { uart_rx_pin }]
 
 set_property CFGBVS VCCO [current_design]
 set_property CONFIG_VOLTAGE 3.3 [current_design]
